@@ -8,8 +8,8 @@ multiLocalFDR is a package for multi-dimensional local-FDR estimation using a se
 The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. A unique feature of our method is that it can be extended to compute the local false discovery rates by combining multiple lists of p-values.
 
   - `localFDR()` provides estimates of local-fdr for given lists of p-values.
-  - `SPestimate()` provides estimates of null and alternative distribution of our method.
-  - `normmix()` provides estimates of null and alternative distribution of normal mixture model. 
+  - `SpMixParam()` provides estimates parameters of null and alternative distribution of our method.
+  - `nMixParam()` provides estimates parameters of null and alternative distribution of normal mixture model. 
   - `arrangeNE()` arranges given data as an increasing order for multi-dimensional data.
 
 You can learn more about them in
@@ -51,13 +51,13 @@ library(multiLocalFDR)
 z<-Carina
 
 # get the parameter estimates of null and alternative distribution
-density<-SPestimate(z)
+density<-SpMixParam(z)
 
 # get the local-FDR estimates by semiparametric mixture
 SpMix<-localFDR(z)
 
 # get the local-FDR estimates by normal mixture
-normalMix<-normmix(z)
+normalMix<-nMixParam(z)
 ```
 
 ### multi-dimensional
@@ -81,13 +81,13 @@ z1 <- qnorm(V, mean = 3.5, sd = .5)
 z <- rbind(z0, z1)
 
 # get the parameter estimates of null and alternative distribution
-density<-SPestimate(z)
+density<-SpMixParam(z)
 
 # get the local-FDR estimates by semiparametric mixture
 SpMix<-localFDR(z)
 
 # get the local-FDR estimates by normal mixture
-normalMix<-normmix(z)
+normalMix<-nMixParam(z)
 ```
 
 ## Getting help
