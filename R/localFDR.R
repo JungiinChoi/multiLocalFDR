@@ -1,13 +1,13 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
+#' @importFrom logcondens activeSetLogCon
 #'
+#' @title LocalFDR estimation for given z-values
 #'
-#' @title LocalFDR estimation for multi-dimensional z-values
-#'
-#' @description \code{sp.mix.multi} returns LocalFDR estimates and semiparametric
+#' @description \code{SpMixParam} returns LocalFDR estimates and semiparametric
 #' mixture density estimates for given multi-dimensional lists of z-values, which
 #' are the probit-transformed p-values.
-#' For the hypothesis testing \code{sp.mix.multi} uses a two-component semiparametric
+#' For the hypothesis testing \code{SpMixParam} uses a two-component semiparametric
 #' mixture model to estimate the LocalFDR from the p-values. The two pillars of the
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
@@ -34,7 +34,7 @@
 #'   \item{iter}{Number of iterations of EM algorithm to compute LocalFDR.}
 #'
 #' @export
-sp.mix.multi <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
+SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
   # FOR MULTIVARIATE CASE ONLY
 {
 
@@ -53,7 +53,6 @@ sp.mix.multi <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9
   k <- 0; converged <- 0
   while ( (k < 3)|((k < max.iter) & (!converged)) ) {
     k <- k + 1
-
     ## E-step
     tmp <- p.0*dmvnorm(z, mu.0, sig.0)
     new.f <- tmp + (1-p.0)*f1.tilde

@@ -1,6 +1,6 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
-#'
+#' @importFrom logcondens activeSetLogCon
 #'
 #' @title LocalFDR estimation for given z-values
 #'
@@ -37,10 +37,10 @@
 SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
   # FOR MULTIVARIATE CASE ONLY
 {
-  
+
   z <- as.matrix(z)
   n <- dim(z)[1]
-  
+
   ## Initial step: to fit normal mixture
   nmEM <- normal.mixture(z)
   p.0 <- nmEM$p.0
@@ -48,7 +48,7 @@ SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, 
   sig.0 <- nmEM$Sigma.0
   f1.tilde <- dmvnorm(z, nmEM$mu.1, nmEM$Sigma.1)
   gam <- f <- rep(0, n)
-  
+
   ## EM-step
   k <- 0; converged <- 0
   while ( (k < 3)|((k < max.iter) & (!converged)) ) {
@@ -58,7 +58,7 @@ SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, 
     new.f <- tmp + (1-p.0)*f1.tilde
     new.gam <- tmp/new.f
     if(mono) new.gam <- MonotoneFDR(z, new.gam)
-    
+
     ## M-step
     sum.gam <- sum(new.gam)
     new.mu.0 <- as.vector(t(z)%*%new.gam)/sum.gam
@@ -71,7 +71,7 @@ SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, 
     which.z <- (new.gam <= thre.z)
     lcd <- fmlogcondens::fmlcd(X=z[which.z,], w = weight[which.z]/sum(weight[which.z]))
     new.f1.tilde[which.z] <- exp(lcd$logMLE)
-    
+
     ## Update
     which.gam <- (new.gam <= Uthre.gam)*(new.gam >= Lthre.gam)
     diff <- max(abs(gam - new.gam)[which.gam])
@@ -82,37 +82,37 @@ SpMixParam <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9, 
     gam <- new.gam
     f <- new.f
   }
-  
+
   res <- list(p.0 = p.0, mu.0 = mu.0, sig.0 = sig.0,
               f1.hat = f1.tilde, f = f, localfdr = gam, iter = k)
-  
+
   return(res)
 }
 
 normal.mixture <- function(z, tol = 5e-3, max.iter = 10)
 {
-  
+
   k <- 0; diff <- 100
   z <- as.matrix(z)
   if ( dim(z)[2] == 1 ) m.dist <- z/sd(z) else m.dist <- mahalanobis(z, center = rep(0, dim(z)[2]), cov = cov(z))
-  
+
   p.0 <- mean(m.dist <= 1.65)
   mu.0 <- rep(0, dim(z)[2])
   sig.0 <- diag(1, dim(z)[2])
   f.0 <- dmvnorm(z, mean = mu.0, sigma = sig.0)
-  
+
   mu.1 <- apply(z[m.dist > 1.65,], 2, mean)
   sig.1 <- cov(z[m.dist > 1.65,])
   f.1 <- dmvnorm(z, mean = mu.1, sigma = sig.1)
-  
+
   while ( (k < 3)|((k < max.iter) & (diff > tol)) ) {
     k <- k + 1
-    
+
     ## E-step
     term1 <- p.0*f.0
     term2 <- term1 + (1-p.0)*f.1
     gam <- term1/term2
-    
+
     ## M-step
     new.p.0 <- mean(gam)
     new.mu.0 <- as.vector(t(z)%*%gam)/sum(gam)
@@ -123,7 +123,7 @@ normal.mixture <- function(z, tol = 5e-3, max.iter = 10)
     dev <- (z - new.mu.1)*sqrt(1 - gam)
     new.sig.1 <- t(dev)%*%dev/sum(1 - gam)
     f.1 <- dmvnorm(z, mean = new.mu.1, sigma = new.sig.1)
-    
+
     ## Update
     diff <- max(abs((new.mu.0 - mu.0)),
                 abs((new.sig.0 - sig.0)),
@@ -147,7 +147,7 @@ NE <- function(x, X)
   p <- ncol(X)
   xx <- matrix(x, nrow = n, ncol = p, byrow = TRUE)
   ne.ind <- apply(1*(X >= xx), 1, prod)
-  
+
   return((1:n)[ne.ind == 1])
 }
 
@@ -159,6 +159,6 @@ MonotoneFDR <- function(z, fdr)
   for (i in 1:n) {
     MFDR[i] <- max(fdr[NE(z[i,], z)])
   }
-  
+
   return(MFDR)
 }
