@@ -7,8 +7,8 @@
 multiLocalFDR is a package for multi-dimensional local-FDR estimation using a semiparametric mixture method.
 The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. A unique feature of our method is that it can be extended to compute the local false discovery rates by combining multiple lists of p-values.
 
-  - `FDR()` provides estimates of FDR or local-FDR for given lists of z-values / p-values.
   - `SpMix()` provides estimates parameters of null and alternative distribution of our semiparametric mixture method.
+  - `FDR()` provides estimates of FDR or local-FDR for given lists of z-values / p-values.
   - `plotFDR()` plots estimated semiparametric mixture distribution and provides threshold z-value for null and alternative distribution.
 
 You can learn more about them in
