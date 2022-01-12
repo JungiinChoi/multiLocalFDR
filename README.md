@@ -7,10 +7,9 @@
 multiLocalFDR is a package for multi-dimensional local-FDR estimation using a semiparametric mixture method.
 The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. A unique feature of our method is that it can be extended to compute the local false discovery rates by combining multiple lists of p-values.
 
-  - `localFDR()` provides estimates of local-fdr for given lists of p-values.
-  - `SpMixParam()` provides estimates parameters of null and alternative distribution of our method.
-  - `nMixParam()` provides estimates parameters of null and alternative distribution of normal mixture model. 
-  - `arrangeNE()` arranges given data as an increasing order for multi-dimensional data.
+  - `FDR()` provides estimates of FDR or local-FDR for given lists of z-values / p-values.
+  - `SpMix()` provides estimates parameters of null and alternative distribution of our semiparametric mixture method.
+  - `plotFDR()` plots estimated semiparametric mixture distribution and provides threshold z-value for null and alternative distribution.
 
 You can learn more about them in
 `vignette("multiLocalFDR")`. 
@@ -46,18 +45,24 @@ devtools::install_github("JungiinChoi/multiLocalFDR")
 ``` r
 library(multiLocalFDR)
 
-# z-values (probit transformed p-values) from data points
+# z-values (probit transformed p-values) and p-values from Carina dataset
 
-z<-Carina
+z <- Carina$z
+p <- Carina$p
 
 # get the parameter estimates of null and alternative distribution
-density<-SpMixParam(z)
+SpMix_Carina <- SpMix(z, leftNUll = FALSE)
 
-# get the local-FDR estimates by semiparametric mixture
-SpMix<-localFDR(z)
+# get FDR and local-FDR estimates using z-values
+FDR_z <- FDR(z, leftNUll = FALSE)
+localFDR_z <- FDR(z, local = TRUE, leftNUll = FALSE)
 
-# get the local-FDR estimates by normal mixture
-normalMix<-nMixParam(z)
+# get FDR and local-FDR estimates using p-values
+FDR_p <- FDR(p, p_value = TRUE, leftNUll = FALSE)
+localFDR_p <- FDR(p, p_value = TRUE, local = TRUE, leftNUll = FALSE)
+
+# plot density estimates and threshold for null and alternative distribution
+plotFDR(z, SpMix_Carina$p0, SpMix_Carina$mu0, SpMix_Carina$sig0, SpMix_Carina$f1, SpMix_Carina$localFDR, leftNUll = FALSE)
 ```
 
 ### multi-dimensional
