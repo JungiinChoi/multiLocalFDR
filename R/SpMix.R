@@ -121,7 +121,8 @@ SpMix <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9,
     q0 <- quantile(z, probs = .9)
     p0 <- mean(z <= q0)
     mu0 <- mean(z[z <= q0])
-    sig0 <- sd(z[z <= q0]
+    sig0 <- sd(z[z <= q0])
+    f0 <- dmvnorm(z, mu0, sig0)
     mu1 <- mean(z[z > q0])
     sig1 <- sd(z[z > q0])
     f1 <- dnorm(z, mu1, sig1)
@@ -135,17 +136,15 @@ SpMix <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9,
   }
   gam <- f <- rep(0, n)
 
-
   ## EM-step
   k <- 0; converged <- 0
   while ( (k < 3)|((k < max.iter) & (!converged)) ) {
     k <- k + 1
 
     ## E-step
-    tmp <- p.0*dmvnorm(z, mu.0, sig.0)
-    new.f <- tmp + (1-p.0)*f1.tilde
-    new.gam <- tmp/new.f
-    if(mono) new.gam <- MonotoneFDR(z, new.gam)
+    new_gam <- p0 * f0 / (p0 * f0 + (1 - p0) * f1)
+
+    if (mono) new_gam <- MonotoneFDR(z, new_gam)
 
     ## M-step
     sum.gam <- sum(new.gam)
