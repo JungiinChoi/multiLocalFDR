@@ -2,13 +2,13 @@
 #' @importFrom mclust dmvnorm
 #' @importFrom logcondens activeSetLogCon
 #'
-#' @title LocalFDR estimation for given z-values
+#' @title Semiparametric Mixture Density Estimation for given z-values
 #'
-#' @description \code{SpMix} returns LocalFDR estimates and semiparametric
+#' @description \code{SpMix} returns localFDR estimates and semiparametric
 #' mixture density estimates for given multi-dimensional lists of z-values, which
 #' are the probit-transformed p-values.
 #' For the hypothesis testing \code{SpMix} uses a two-component semiparametric
-#' mixture model to estimate the LocalFDR from the p-values. The two pillars of the
+#' mixture model to estimate the localFDR from the z-values. The two pillars of the
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
 #'
@@ -17,25 +17,27 @@
 #' of current and previous gamma value is smaller than tol,
 #' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 #' then optimization stops. (default: 5e-6)
-#' @param max.iter Maximum number of iterations in the EM algorithm. (default: 30)
-#' @param mono If TRUE, LocalFDR is in ascending order of z-values. (default: TRUE)
-#' @param thre.z Threshold value which only z-values smaller than thre.z
+#' @param leftNull If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)
+#' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
+#' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
+#' @param thre_z Threshold value which only z-values smaller than thre.z
 #' are used to compute the log-concave estimates f_1 in M-step.
-#' @param Uthre.gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
-#' @param Lthre.gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
+#' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
+#' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #'
 #'
 #' @return Estimates of semiparametric mixture model for f for given z-values.
 #'
-#'   \item{p.0}{Prior probability for null distribution}
-#'   \item{mu.0 sig.0}{Parameter estimates of normal null distribution, N(mu.0, sig.0^2)}
+#'   \item{p0}{Prior probability for null distribution}
+#'   \item{mu0 sig0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
 #'   \item{f}{Probability estimates of semiparametric mixture model for each z-value point.}
-#'   \item{localfdr}{LocalFDR estimates for given z-values}
-#'   \item{iter}{Number of iterations of EM algorithm to compute LocalFDR.}
+#'   \item{f1}{Probability estimates of alternative distribution of mixture model for each z-value point.}
+#'   \item{localFDR}{localFDR estimates for given z-values}
+#'   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
 #'
 #' @export
-SpMix <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9,
-                  Uthre.gam = 0.9, Lthre.gam = 0.01, )
+SpMix <- function(z, tol = 5e-6, leftNull = TRUE, max_iter = 30, mono = TRUE, thre_z = 0.9,
+                  Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
 
@@ -118,14 +120,26 @@ SpMix <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9,
 
   ## Initial step: to fit normal mixture
   if (dim(z)[2] == 1) {
-    q0 <- quantile(z, probs = .9)
-    p0 <- mean(z <= q0)
-    mu0 <- mean(z[z <= q0])
-    sig0 <- sd(z[z <= q0])
-    f0 <- dmvnorm(z, mu0, sig0)
-    mu1 <- mean(z[z > q0])
-    sig1 <- sd(z[z > q0])
-    f1 <- dnorm(z, mu1, sig1)
+    if (leftNull) {
+      q0 <- quantile(z, probs = .9)
+      p0 <- mean(z <= q0)
+      mu0 <- mean(z[z <= q0])
+      sig0 <- sd(z[z <= q0])
+      f0 <- dmvnorm(z, mu0, sig0)
+      mu1 <- mean(z[z > q0])
+      sig1 <- sd(z[z > q0])
+      f1 <- dnorm(z, mu1, sig1)
+    }
+    else {
+      q0 <- quantile(z, probs = .7)
+      p0 <- mean(z >= q0)
+      mu0 <- mean(z[z >= q0])
+      sig0 <- sd(z[z >= q0])
+      f0 <- dmvnorm(z, mu0, sig0)
+      mu1 <- mean(z[z < q0])
+      sig1 <- sd(z[z < q0])
+      f1 <- dnorm(z, mu1, sig1)
+    }
   }
   else {
     Params <- NormMix(z)
@@ -142,36 +156,38 @@ SpMix <- function(z, tol = 5e-6, max.iter = 30, mono = TRUE, thre.z = 0.9,
     k <- k + 1
 
     ## E-step
-    new_gam <- p0 * f0 / (p0 * f0 + (1 - p0) * f1)
+    new_f <- (p0 * f0 + (1 - p0) * f1)
+    new_gam <- p0 * f0 / new_f
 
     if (mono) new_gam <- MonotoneFDR(z, new_gam)
 
     ## M-step
-    sum.gam <- sum(new.gam)
-    new.mu.0 <- as.vector(t(z)%*%new.gam)/sum.gam
-    dev <- t(t(z)-new.mu.0)*sqrt(new.gam)
-    new.sig.0 <- t(dev)%*%dev/sum.gam
-    new.p.0 <- mean(new.gam)
-    new.f.0 <- dmvnorm(z, new.mu.0, new.sig.0)
-    weight <- 1 - new.gam
-    new.f1.tilde <- rep(0, n)
-    which.z <- (new.gam <= thre.z)
-    lcd <- fmlogcondens::fmlcd(X=z[which.z,], w = weight[which.z]/sum(weight[which.z]))
-    new.f1.tilde[which.z] <- exp(lcd$logMLE)
+    sum_gam <- sum(new_gam)
+    new_mu0 <- as.vector(t(z) %*% new_gam) / sum_gam
+    dev <- t(t(z)-new_mu0) * sqrt(new_gam)
+    new_sig0 <- t(dev) %*% dev / sum.gam
+    new_p0 <- mean(new_gam)
+    new_f0 <- dmvnorm(z, new_mu0, new_sig0)
+    weight <- 1 - new_gam
+    new_f1 <- rep(0, n)
+    which_z <- (new_gam <= thre_z)
+    lcd <- fmlogcondens::fmlcd(X=z[which_z,], w = weight[which_z] / sum(weight[which_z]))
+    new_f1[which_z] <- exp(lcd$logMLE)
 
     ## Update
-    which.gam <- (new.gam <= Uthre.gam)*(new.gam >= Lthre.gam)
-    diff <- max(abs(gam - new.gam)[which.gam])
+    which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
+    diff <- max(abs(gam - new_gam)[which_gam])
     converged <- (diff <= tol)
     cat("   EM iteration:", k, ", Change in mdfdr fit = ", round(diff, 5), "\n")
-    p.0 <- new.p.0; mu.0 <- new.mu.0; sig.0 <- new.sig.0
-    f1.tilde <- new.f1.tilde
-    gam <- new.gam
-    f <- new.f
+    p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
+    f1 <- new_f1
+    f0 <- new_f0
+    f <- new_f
+    gam <- new_gam
   }
 
-  res <- list(p.0 = p.0, mu.0 = mu.0, sig.0 = sig.0,
-              f1.hat = f1.tilde, f = f, localfdr = gam, iter = k)
+  res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
+              f = f, f1 = f1, localFDR = gam, iter = k)
 
   return(res)
 }
