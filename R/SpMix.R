@@ -152,7 +152,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
 
   ## EM-step
   k <- 0; converged <- 0
-  while ( (k < 3)|((k < max.iter) & (!converged)) ) {
+  while ( (k < 3)|((k < max_iter) & (!converged)) ) {
     k <- k + 1
 
     ## E-step
