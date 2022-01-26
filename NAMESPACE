@@ -2,6 +2,7 @@
 
 export(FDR)
 export(SpMix)
+export(localFDR)
 export(plotFDR)
 importFrom(fmlogcondens,fmlcd)
 importFrom(logcondens,activeSetLogCon)

@@ -7,7 +7,7 @@
 SpMix(
   z,
   tol = 5e-06,
-  leftNull = TRUE,
+  alternative = "greater",
   max_iter = 30,
   mono = TRUE,
   thre_z = 0.9,
@@ -23,7 +23,7 @@ of current and previous gamma value is smaller than tol,
 i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 then optimization stops. (default: 5e-6)}
 
-\item{leftNull}{If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)}
+\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 
 \item{max_iter}{Maximum number of iterations in the EM algorithm. (default: 30)}
 

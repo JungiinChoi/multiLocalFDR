@@ -4,7 +4,16 @@
 \alias{plotFDR}
 \title{plotFDR estimation for given z-values}
 \usage{
-plotFDR(z, p0, mu0, sig0, f1, localFDR, leftNull = TRUE, thre_localFDR = 0.2)
+plotFDR(
+  z,
+  p0,
+  mu0,
+  sig0,
+  f1,
+  localFDR,
+  alternative = "greater",
+  thre_localFDR = 0.2
+)
 }
 \arguments{
 \item{z}{Matrix which column indicates z-values, probit-transformed p-values.}
@@ -17,7 +26,7 @@ plotFDR(z, p0, mu0, sig0, f1, localFDR, leftNull = TRUE, thre_localFDR = 0.2)
 
 \item{localFDR}{localFDR estimates for given z-values}
 
-\item{leftNull}{If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)}
+\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 
 \item{thre_localFDR}{Threshold of localFDR for null and alternative distribution (default: 0.2)}
 }

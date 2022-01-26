@@ -4,10 +4,9 @@
 #'
 #' @title FDR estimation for given z-values / p-values
 #'
-#' @description \code{FDR} returns FDR estimates for given multi-dimensional lists of z-values.
-#' \code{FDR} also provides localFDR estimates for both z-values and p-values.
+#' @description \code{FDR} returns FDR estimates for given multi-dimensional lists of z-values / p-values.
 #' \code{FDR} imports \code{SpMix} for a two-component semiparametric
-#' mixture model to estimate the FDR / localFDR from the z-values / p-values.
+#' mixture model to estimate the FDR from the z-values / p-values.
 #'
 #' @param z Matrix which column indicates z-values, probit-transformed p-values.
 #' @param tol Stopping criteria for the EM algorithm. If maximum absolute difference
@@ -16,7 +15,7 @@
 #' then optimization stops. (default: 5e-6)
 #' @param p_value If TRUE, input are p-values. If FALSE, input are z-values. (default: FALSE)
 #' @param local If TRUE, \code{FDR} returns localFDR estimates for given z-values or p-values. IF FALSE, \code{FDR} returns FDR estimates. (default: FALSE)
-#' @param leftNull If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)
+#' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, FDR is in ascending order of z-values. (default: TRUE)
 #' @param thre_z Threshold value which only z-values smaller than thre.z
@@ -28,14 +27,13 @@
 #' @return Estimates of FDR or localFDR for given z-values / p-values.
 #'
 #'   \item{FDR}{FDR estimates for given z-values / p-values}
-#'   \item{localFDR}{local FDR estimates for given z-values / p-values}
 #'
 #' @export
-FDR <- function(z, tol = 5e-6, p_value = FALSE, local = FALSE, leftNull = TRUE, max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
+FDR <- function(z, tol = 5e-6, p_value = FALSE, local = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
 {
 
   if (p_value) {
-    if (leftNull) {
+    if (alternative == "greater" | alternative == "g")  {
       z = qnorm(1-z)
     }
     else {
@@ -45,12 +43,7 @@ FDR <- function(z, tol = 5e-6, p_value = FALSE, local = FALSE, leftNull = TRUE, 
 
   SpMixParams <- SpMix(z, tol, max_iter, leftNull, mono, thre_z, Uthre_gam, Lthre_gam)
 
-  if (local) {
+  # todo
+  # localFDR => FDR
     return(SpMixParams$localFDR)
-  }
-  else {
-    # todo
-    # localFDR => FDR
-    return(SpMixParams$localFDR)
-  }
 }

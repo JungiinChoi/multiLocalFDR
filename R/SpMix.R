@@ -17,7 +17,7 @@
 #' of current and previous gamma value is smaller than tol,
 #' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 #' then optimization stops. (default: 5e-6)
-#' @param leftNull If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)
+#' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
 #' @param thre_z Threshold value which only z-values smaller than thre.z
@@ -36,7 +36,7 @@
 #'   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
 #'
 #' @export
-SpMix <- function(z, tol = 5e-6, leftNull = TRUE, max_iter = 30, mono = TRUE, thre_z = 0.9,
+SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
@@ -120,7 +120,7 @@ SpMix <- function(z, tol = 5e-6, leftNull = TRUE, max_iter = 30, mono = TRUE, th
 
   ## Initial step: to fit normal mixture
   if (dim(z)[2] == 1) {
-    if (leftNull) {
+    if (alternative == "greater" | alternative == "g") {
       q0 <- quantile(z, probs = .9)
       p0 <- mean(z <= q0)
       mu0 <- mean(z[z <= q0])

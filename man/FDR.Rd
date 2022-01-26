@@ -9,7 +9,7 @@ FDR(
   tol = 5e-06,
   p_value = FALSE,
   local = FALSE,
-  leftNull = TRUE,
+  alternative = "greater",
   max_iter = 30,
   mono = TRUE,
   thre.z = 0.9,
@@ -29,7 +29,7 @@ then optimization stops. (default: 5e-6)}
 
 \item{local}{If TRUE, \code{FDR} returns localFDR estimates for given z-values or p-values. IF FALSE, \code{FDR} returns FDR estimates. (default: FALSE)}
 
-\item{leftNull}{If TRUE, a null distribution is placed to the left of the alternative distribution. (default: TRUE)}
+\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 
 \item{max_iter}{Maximum number of iterations in the EM algorithm. (default: 30)}
 
@@ -46,11 +46,9 @@ are used to compute the log-concave estimates f_1 in M-step.}
 Estimates of FDR or localFDR for given z-values / p-values.
 
   \item{FDR}{FDR estimates for given z-values / p-values}
-  \item{localFDR}{local FDR estimates for given z-values / p-values}
 }
 \description{
-\code{FDR} returns FDR estimates for given multi-dimensional lists of z-values.
-\code{FDR} also provides localFDR estimates for both z-values and p-values.
+\code{FDR} returns FDR estimates for given multi-dimensional lists of z-values / p-values.
 \code{FDR} imports \code{SpMix} for a two-component semiparametric
-mixture model to estimate the FDR / localFDR from the z-values / p-values.
+mixture model to estimate the FDR from the z-values / p-values.
 }
