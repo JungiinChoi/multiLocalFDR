@@ -165,7 +165,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
     sum_gam <- sum(new_gam)
     new_mu0 <- as.vector(t(z) %*% new_gam) / sum_gam
     dev <- t(t(z)-new_mu0) * sqrt(new_gam)
-    new_sig0 <- t(dev) %*% dev / sum.gam
+    new_sig0 <- t(dev) %*% dev / sum_gam
     new_p0 <- mean(new_gam)
     new_f0 <- dmvnorm(z, new_mu0, new_sig0)
     weight <- 1 - new_gam
