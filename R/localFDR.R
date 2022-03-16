@@ -28,7 +28,7 @@
 #'   \item{localFDR}{local FDR estimates for given z-values / p-values}
 #'
 #' @export
-localFDR <- function(z, tol = 5e-6, p_value = FALSE, local = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
+localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
 {
 
   if (p_value) {
