@@ -19,14 +19,14 @@
 #' @param localFDR localFDR estimates for given z-values
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param thre_localFDR Threshold of localFDR for null and alternative distribution (default: 0.2)
-#'
+#' @param density TRUE if it's for density estimation, FALSE if it's for hypothesis testing
 #'
 #' @return Plot estimated semiparametric mixture density and return threshold value.
 #'
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thre_localFDR = 0.2)
+plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thre_localFDR = 0.2, density = FALSE)
   # FOR MULTIVARIATE CASE ONLY
 {
   which_z <- localFDR <= thre_localFDR
