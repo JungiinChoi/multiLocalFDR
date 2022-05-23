@@ -7,6 +7,7 @@
 SpMix(
   z,
   tol = 5e-06,
+  p_value = FALSE,
   alternative = "greater",
   max_iter = 30,
   mono = TRUE,
@@ -22,6 +23,8 @@ SpMix(
 of current and previous gamma value is smaller than tol,
 i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 then optimization stops. (default: 5e-6)}
+
+\item{p_value}{If TRUE, column of input indicates p-values, if FALSE, it indicates z-values. (default: FALSE)}
 
 \item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 

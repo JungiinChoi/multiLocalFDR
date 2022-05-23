@@ -1,6 +1,6 @@
-# Galaxy Dataset -------------------------
+# Velocity of Galaxies -------------------------
 
-Galaxy <- read.table("data-raw/Galaxy.txt", skip=1)
+galaxy <- read.table("data-raw/galaxy.txt", skip=1)
 colnames(Galaxy) <- c("radius","velocity")
 
-save(Galaxy, file = "data/Galaxy.rdata")
+save(galaxy, file = "data/galaxy.rdata")

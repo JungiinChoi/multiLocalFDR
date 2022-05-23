@@ -1,5 +1,5 @@
-# Microarrays Dataset -------------------------
+# P-values for microarray data -------------------------
 
-Microarrays <- read.table("data-raw/Microarrays.txt",skip=1)
+microarrays <- read.csv("data-raw/microarrays.csv")[,-1]
 
-save(Microarrays, file = "data/Microarrays.rdata")
+save(microarrays, file = "data/microarrays.rdata")

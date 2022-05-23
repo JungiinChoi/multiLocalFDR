@@ -8,13 +8,12 @@ FDR(
   z,
   tol = 5e-06,
   p_value = FALSE,
-  local = FALSE,
   alternative = "greater",
   max_iter = 30,
   mono = TRUE,
-  thre.z = 0.9,
-  Uthre.gam = 0.9,
-  Lthre.gam = 0.01
+  thre_z = 0.9,
+  Uthre_gam = 0.9,
+  Lthre_gam = 0.01
 )
 }
 \arguments{
@@ -26,8 +25,6 @@ i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 then optimization stops. (default: 5e-6)}
 
 \item{p_value}{If TRUE, input are p-values. If FALSE, input are z-values. (default: FALSE)}
-
-\item{local}{If TRUE, \code{FDR} returns localFDR estimates for given z-values or p-values. IF FALSE, \code{FDR} returns FDR estimates. (default: FALSE)}
 
 \item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 
@@ -41,6 +38,8 @@ are used to compute the log-concave estimates f_1 in M-step.}
 \item{Uthre_gam}{Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
 
 \item{Lthre_gam}{Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
+
+\item{local}{If TRUE, \code{FDR} returns localFDR estimates for given z-values or p-values. IF FALSE, \code{FDR} returns FDR estimates. (default: FALSE)}
 }
 \value{
 Estimates of FDR or localFDR for given z-values / p-values.

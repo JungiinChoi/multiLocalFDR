@@ -1,6 +1,5 @@
-# Microarrays Dataset -------------------------
+# Raw p-values for pathways -------------------------
 
-Pathways <- read.table("data-raw/Pathways.txt",skip=1)
-colnames(Pathways) <- c("z_value_L","z_value_O","z_value_S")
+pathways <- read.csv("data-raw/pathways.csv")[,-1]
 
-save(Pathways, file = "data/Pathways.rdata")
+save(pathways, file = "data/pathways.rdata")

@@ -12,7 +12,8 @@ plotFDR(
   f1,
   localFDR,
   alternative = "greater",
-  thre_localFDR = 0.2
+  thre_localFDR = 0.2,
+  density = FALSE
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ plotFDR(
 \item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
 
 \item{thre_localFDR}{Threshold of localFDR for null and alternative distribution (default: 0.2)}
+
+\item{density}{TRUE if it's for density estimation, FALSE if it's for hypothesis testing}
 }
 \value{
 Plot estimated semiparametric mixture density and return threshold value.
