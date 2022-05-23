@@ -19,15 +19,14 @@
 #' @param localFDR localFDR estimates for given z-values
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param thre_localFDR Threshold of localFDR for null and alternative distribution (default: 0.2)
-#' @param density TRUE if it's for density estimation, FALSE if it's for hypothesis testing
+#' @param testing TRUE if it's for hypothesis testing, FALSEif it's for density estimation
 #'
 #' @return Plot estimated semiparametric mixture density and return threshold value.
 #'
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thre_localFDR = 0.2, density = FALSE)
-  # FOR MULTIVARIATE CASE ONLY
+plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thre_localFDR = 0.2, testing = TRUE)
 {
   which_z <- (localFDR <= thre_localFDR)
 
@@ -43,7 +42,8 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thr
       thre <- max(z[which_z])
     }
 
-    legend <- factor(which_z, levels = c("Null","Alternative"))
+    legend_testing <- factor(which_z, levels = c("Null","Alternative"))
+    legend_density <- factor(which_z, levels = c("Normal","Nonparametric"))
 
     sub=substitute(
       paste(p[0], " = ", p0, ", ",
@@ -58,18 +58,33 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thr
 
     df = data.frame(z=z)
     zs <- sort(z)
-    ggplot(df,aes(x=z)) +
-      geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
-      geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
-      geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
-      geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
-      geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color='yellow',shape=25,fill="yellow") +
-      labs(x="z-value", y = "density") +
-      ggtitle(sub) +
-      theme(plot.title = element_text(margin = margin(b = -10))) +
-      geom_rug(aes(z,color = legend))+
-      scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
-      theme_classic()
+    if (testing) {
+      ggplot(df,aes(x=z)) +
+        geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
+        geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
+        geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color='yellow',shape=25,fill="yellow") +
+        labs(x="z-value", y = "density") +
+        ggtitle(sub) +
+        theme(plot.title = element_text(margin = margin(b = -10))) +
+        geom_rug(aes(z,color = legend_testing))+
+        scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
+        theme_classic()
+    } else {
+      ggplot(df,aes(x=z)) +
+        geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
+        geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
+        labs(x="z-value", y = "density") +
+        ggtitle(sub) +
+        theme(plot.title = element_text(margin = margin(b = -10))) +
+        geom_rug(aes(z,color = legend_density))+
+        scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
+        theme_classic()
+    }
+
   }
   return(thre)
 
