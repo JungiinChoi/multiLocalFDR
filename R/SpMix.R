@@ -36,6 +36,7 @@
 #'   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
 #'
 #' @export
+
 SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
@@ -116,6 +117,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
   # ******************* MAIN FUNCTION *******************************
   z <- as.matrix(z)
   n <- dim(z)[1]
+  d <- dim(z)[2]
 
   ## Initial step: to fit normal mixture
   if (dim(z)[2] == 1) {
@@ -128,8 +130,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
       mu1 <- mean(z[z > q0])
       sig1 <- sd(z[z > q0])
       f1 <- dnorm(z, mu1, sig1)
-    }
-    else {
+    } else {
       q0 <- quantile(z, probs = .7)
       p0 <- mean(z >= q0)
       mu0 <- mean(z[z >= q0])
@@ -139,8 +140,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
       sig1 <- sd(z[z < q0])
       f1 <- dnorm(z, mu1, sig1)
     }
-  }
-  else {
+  } else {
     Params <- NormMix(z)
     p0 <- Params$p0
     mu0 <- Params$mu0
@@ -149,10 +149,10 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
   }
   gam <- f <- rep(0, n)
 
-  if (dim(z)[2] == 1) {
+
+  if (d == 1) {
 
     z <- as.numeric(z)
-
     ## EM-step
     k <- 0; converged <- 0
     while ( (k < 3) | ((k < max_iter) & (!converged)) ) {
@@ -180,16 +180,14 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
       diff <- max(abs(gam - new_gam)[which_gam])
       converged <- (diff <= tol)
       cat("   EM iteration:", k, ", Change in fdr fit = ", round(diff, 5), "\n")
-      p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
+      p0 <- new_p0; mu0 <- new_mu0; sig0 <- new_sig0
       f1 <- new_f1
       f0 <- new_f0
       f <- new_f
       gam <- new_gam
 
     }
-  }
-
-  else {
+  } else {
     ## EM-step
     k <- 0; converged <- 0
     while ( (k < 3)|((k < max_iter) & (!converged)) ) {
@@ -219,13 +217,12 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
       diff <- max(abs(gam - new_gam)[which_gam])
       converged <- (diff <= tol)
       cat("   EM iteration:", k, ", Change in mdfdr fit = ", round(diff, 5), "\n")
-      p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
+      p0 <- new_p0; mu0 <- new_mu0; sig0 <- new_sig0
       f1 <- new_f1
       f0 <- new_f0
       f <- new_f
       gam <- new_gam
     }
-
   }
 
   res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
@@ -233,4 +230,3 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
 
   return(res)
 }
-
