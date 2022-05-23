@@ -41,10 +41,10 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thr
       thre <- max(z[which_z])
     }
 
-    legend_testing <- factor(which_z, levels = c("Null","Alternative"))
-    legend_density <- factor(which_z, levels = c("Normal","Nonparametric"))
+    legend_testing <- factor(which_z, levels = c(TRUE, FALSE), labels = c("Alternative", "Null"))
+    legend_density <- factor(which_z, levels = c(TRUE, FALSE), labels = c("Nonparametric", "Normal"))
 
-    sub=substitute(
+    sub_testing=substitute(
       paste(p[0], " = ", p0, ", ",
             mu[0], " = ", mu0, ", ",
             sigma[0], " = ", sigma0, ", ",
@@ -55,32 +55,41 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thr
            sigma0 = round(sig0, digits = 2),
            threshold = round(thre, digits = 2)))
 
+    sub_density=substitute(
+      paste(p[0], " = ", p0, ", ",
+            mu[0], " = ", mu0, ", ",
+            sigma[0], " = ", sigma0, ", ",
+            sep = ""),
+      list(p0 = round(p0, 2),
+           mu0 = round(mu0, digits = 2),
+           sigma0 = round(sig0, digits = 2)))
+
     df = data.frame(z=z)
     zs <- sort(z)
     if (testing) {
       ggplot(df,aes(x=z)) +
         geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
-        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
-        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
-        geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
-        geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color='yellow',shape=25,fill="yellow") +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=1.1) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=1.1) +
+        geom_vline(aes(xintercept=mu0), color="#0072B2",linetype="dashed") +
+        geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color='#F0E442',shape=25,fill="#F0E442") +
         labs(x="z-value", y = "density") +
-        ggtitle(sub) +
+        ggtitle(sub_testing) +
         theme(plot.title = element_text(margin = margin(b = -10))) +
         geom_rug(aes(z,color = legend_testing))+
-        scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
+        scale_color_manual(values = c("#0072B2", "#D55E00"), name="")+
         theme_classic()
     } else {
       ggplot(df,aes(x=z)) +
         geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
-        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
-        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
-        geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=1.1) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=1.1) +
+        geom_vline(aes(xintercept=mu0), color="#0072B2",linetype="dashed") +
         labs(x="z-value", y = "density") +
-        ggtitle(sub) +
+        ggtitle(sub_density) +
         theme(plot.title = element_text(margin = margin(b = -10))) +
         geom_rug(aes(z,color = legend_density))+
-        scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
+        scale_color_manual(values = c("#0072B2", "#D55E00"), name="")+
         theme_classic()
     }
 
