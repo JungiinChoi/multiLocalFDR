@@ -28,19 +28,13 @@
 #'   \item{localFDR}{local FDR estimates for given z-values / p-values}
 #'
 #' @export
-localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
+#'
+
+localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
+                     mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01)
 {
+  SpMixParams <- SpMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
+                       Uthre_gam, Lthre_gam)
 
-  if (p_value) {
-    if (alternative == "greater" | alternative == "g") {
-      z = qnorm(1-z)
-    }
-    else {
-      z = qnorm(z)
-    }
-  }
-  SpMixParams <- SpMix(z, tol, max_iter, leftNull, mono, thre_z, Uthre_gam, Lthre_gam)
   return(SpMixParams$localFDR)
-
-
 }

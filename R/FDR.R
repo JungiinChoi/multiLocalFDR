@@ -29,21 +29,32 @@
 #'   \item{FDR}{FDR estimates for given z-values / p-values}
 #'
 #' @export
-FDR <- function(z, tol = 5e-6, p_value = FALSE, local = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre.z = 0.9, Uthre.gam = 0.9, Lthre.gam = 0.01)
+
+FDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
+                     mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01)
 {
+  SpMixParams <- SpMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
+                       Uthre_gam, Lthre_gam)
+
+  z <- as.matrix(z)
+  n <- dim(z)[1]
+  d <- dim(z)[2]
 
   if (p_value) {
-    if (alternative == "greater" | alternative == "g")  {
+    if (alternative == "greater" | alternative == "g") {
       z = qnorm(1-z)
-    }
-    else {
+    } else {
       z = qnorm(z)
     }
   }
 
-  SpMixParams <- SpMix(z, tol, max_iter, leftNull, mono, thre_z, Uthre_gam, Lthre_gam)
+  if (d == 1) {
+    F0 <- pnorm(z, SpMixParams$mu0, SpMixParams$sig0)
+    F1 <- ecdf(SpMixParams$f1)
+    p0 <- SpMixParams$p0
+    FDR <- p0 * F0 / (p0 * F0 + (1-p0) * F1)
+  }
 
-  # todo
-  # localFDR => FDR
-    return(SpMixParams$localFDR)
+  res_FDR <- list(F0 = F0, F1 = F1, FDR = FDR)
+  return(res_FDR)
 }

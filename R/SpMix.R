@@ -17,6 +17,7 @@
 #' of current and previous gamma value is smaller than tol,
 #' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 #' then optimization stops. (default: 5e-6)
+#' @param p_value If TRUE, column of input indicates p-values, if FALSE, it indicates z-values. (default: FALSE)
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
@@ -37,7 +38,7 @@
 #'
 #' @export
 
-SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
+SpMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
@@ -90,8 +91,6 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
     return(list(p0 = p0, mu0 = mu0, sig0 = sig0, mu1 = mu1, sig1 = sig1))
   }
 
-
-
   NE <- function(x, X)
   {
     n <- nrow(X)
@@ -101,7 +100,6 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
 
     return((1:n)[ne.ind == 1])
   }
-
 
   MonotoneFDR <- function(z, fdr)
   {
@@ -118,6 +116,14 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
   z <- as.matrix(z)
   n <- dim(z)[1]
   d <- dim(z)[2]
+
+  if (p_value) {
+    if (alternative == "greater" | alternative == "g") {
+      z = qnorm(1-z)
+    } else {
+      z = qnorm(z)
+    }
+  }
 
   ## Initial step: to fit normal mixture
   if (dim(z)[2] == 1) {

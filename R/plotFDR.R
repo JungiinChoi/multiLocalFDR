@@ -29,39 +29,49 @@
 plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thre_localFDR = 0.2, density = FALSE)
   # FOR MULTIVARIATE CASE ONLY
 {
-  which_z <- localFDR <= thre_localFDR
+  which_z <- (localFDR <= thre_localFDR)
 
-  if (alternative == "greater" | alternative == "g"){
-    thre <- min(z[which_z])
+  z <- as.matrix(z)
+  n <- dim(z)[1]
+  d <- dim(z)[2]
+
+  if (d == 1){
+    z = as.numeric(z)
+    if (alternative == "greater" | alternative == "g"){
+      thre <- min(z[which_z])
+    } else{
+      thre <- max(z[which_z])
+    }
+
+    legend <- factor(which_z, levels = c("Null","Alternative"))
+
+    sub=substitute(
+      paste(p[0], " = ", p0, ", ",
+            mu[0], " = ", mu0, ", ",
+            sigma[0], " = ", sigma0, ", ",
+            "threshold = ", threshold,
+            sep = ""),
+      list(p0 = round(p0, 2),
+           mu0 = round(mu0, digits = 2),
+           sigma0 = round(sig0, digits = 2),
+           threshold = round(thre, digits = 2)))
+
+    df = data.frame(z=z)
+    zs <- sort(z)
+    ggplot(df,aes(x=z)) +
+      geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
+      geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#00BFC4",lwd=1.1) +
+      geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#F8766D",lwd=1.1) +
+      geom_vline(aes(xintercept=mu0), color="#00BFC4",linetype="dashed") +
+      geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color='yellow',shape=25,fill="yellow") +
+      labs(x="z-value", y = "density") +
+      ggtitle(sub) +
+      theme(plot.title = element_text(margin = margin(b = -10))) +
+      geom_rug(aes(z,color = legend))+
+      scale_color_manual(values = c("#00BFC4", "#F8766D"), name="")+
+      theme_classic()
   }
-  else{
-    thre <- max(z[which_z])
-  }
-
-  hist(z,
-       nclass = max(round(length(z)/20), 24),
-       probability = TRUE,
-       col = "gray", border = "white",
-       xlab = "",
-       main = "",
-       sub = substitute(
-         paste(p[0], " = ", p0, ", ",
-               mu[0], " = ", mu0, ", ",
-               sigma[0], " = ", sigma0, ", ",
-               "threshold = ", threshold,
-               sep = ""),
-         list(p0 = round(p0, 2),
-              mu0 = round(mu0, 2),
-              sigma0 = round(sig0, 2),
-              threshold = round(thre, 2))))
-  rug(z, col = "gray")
-  rug(z[which_z], col = 2)
-  z_sorted <- sort(z)
-  lines(z_sorted, p0 * dnorm(z_sorted, mu0, sig0), col = 3, lwd = 2)
-  lines(z_sorted, (1-p0) * f1[order(z)], col = 2, lwd = 2)
-  points(thre, 0, bg = "yellow", col = 2, pch = 25)
-
-  return(thre = thre)
+  return(thre)
 
 }
 
