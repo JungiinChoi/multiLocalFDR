@@ -1,6 +1,5 @@
-#' @importFrom fmlogcondens fmlcd
-#' @importFrom mclust dmvnorm
-#' @importFrom logcondens activeSetLogCon
+#' @import ggplot2
+#'
 #'
 #' @title plotFDR estimation for given z-values
 #'
@@ -86,7 +85,6 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, alternative = "greater", thr
     }
 
   }
-  return(thre)
 
 }
 
