@@ -17,7 +17,7 @@
 #' of current and previous gamma value is smaller than tol,
 #' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 #' then optimization stops. (default: 5e-6)
-#' @param p_value If TRUE, column of input indicates p-values, if FALSE, it indicates z-values. (default: FALSE)
+#' @param p_value If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
@@ -123,10 +123,15 @@ SpMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     } else {
       z = qnorm(z)
     }
+  } else {
+    raw_mean = mean(z)
+    if (d == 1) {raw_sd = sd(z)} else {raw_cov = cov(z)}
+    z = scale(z)
   }
 
   ## Initial step: to fit normal mixture
-  if (dim(z)[2] == 1) {
+  if (d == 1) {
+    z = z[,1]
     if (alternative == "greater" | alternative == "g") {
       q0 <- quantile(z, probs = .9)
       p0 <- mean(z <= q0)
@@ -231,8 +236,18 @@ SpMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     }
   }
 
-  res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
-              f = f, f1 = f1, localFDR = gam, iter = k)
+  if (p_value) {
+    res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
+                f = f, f1 = f1, localFDR = gam, iter = k)
+  } else {
+    if (d == 1){
+      res <- list(p0 = p0, mu0 = mu0*raw_sd + raw_mean, sig0 = sig0*raw_sd,
+                  f = f/raw_sd, f1 = f1/raw_sd, localFDR = gam, iter = k)
+    } else {
+      res <- list(p0 = p0, mu0 = mu0%*%raw_cov + raw_mean, sig0 = sig0%*%raw_cov,
+                  f = f, f1 = f1, localFDR = gam, iter = k)
+    }
+  }
 
   return(res)
 }
