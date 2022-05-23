@@ -159,7 +159,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
     new_f <- (p0 * f0 + (1 - p0) * f1)
     new_gam <- p0 * f0 / new_f
 
-    if (mono) new_gam <- MonotoneFDR(z, new_gam)
+    if ((dim(z)[2] > 1) && (mono)) new_gam <- MonotoneFDR(z, new_gam)
 
     ## M-step
     sum_gam <- sum(new_gam)
