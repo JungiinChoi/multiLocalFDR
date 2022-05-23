@@ -1,6 +1,6 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
-#' @importFrom logcondens activeSetLogCon
+#' @importFrom LogConcDEAD mlelcd
 #'
 #' @title Semiparametric Mixture Density Estimation for given z-values
 #'
@@ -155,7 +155,7 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
 
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 3) | ((k < max.iter) & (!converged)) ) {
+    while ( (k < 3) | ((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
@@ -168,12 +168,12 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
       new_mu0 <- sum(w_gam*z, na.rm = TRUE)
       new_sig0 <- sqrt(sum(w_gam*(z-new_mu0)^2, na.rm = TRUE))
       new_p0 <- mean(new_gam, na.rm = TRUE)
-
+      new_f0 <- dnorm(z, new_mu0, new_sig0)
       new_f1 <- rep(0, n)
       which_z <- (new_gam <= thre_z)
       weight <- 1 - new_gam[which_z]
       weight <- weight/sum(weight)
-      new_f1[which_z] <- exp(logcondens::activeSetLogCon(z[which_z], w = weight)$phi)
+      new_f1[which_z] <- exp(LogConcDEAD::mlelcd(z[which_z], w = weight)$logMLE)
 
       ## Update
       which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
