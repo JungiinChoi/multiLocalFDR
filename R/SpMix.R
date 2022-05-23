@@ -114,7 +114,6 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
   }
 
   # ******************* MAIN FUNCTION *******************************
-
   z <- as.matrix(z)
   n <- dim(z)[1]
 
@@ -150,40 +149,83 @@ SpMix <- function(z, tol = 5e-6, alternative = "greater", max_iter = 30, mono = 
   }
   gam <- f <- rep(0, n)
 
-  ## EM-step
-  k <- 0; converged <- 0
-  while ( (k < 3)|((k < max_iter) & (!converged)) ) {
-    k <- k + 1
+  if (dim(z)[2] == 1) {
 
-    ## E-step
-    new_f <- (p0 * f0 + (1 - p0) * f1)
-    new_gam <- p0 * f0 / new_f
+    z <- as.numeric(z)
 
-    if ((dim(z)[2] > 1) && (mono)) new_gam <- MonotoneFDR(z, new_gam)
+    ## EM-step
+    k <- 0; converged <- 0
+    while ( (k < 3) | ((k < max.iter) & (!converged)) ) {
+      k <- k + 1
 
-    ## M-step
-    sum_gam <- sum(new_gam)
-    new_mu0 <- as.vector(t(z) %*% new_gam) / sum_gam
-    dev <- t(t(z)-new_mu0) * sqrt(new_gam)
-    new_sig0 <- t(dev) %*% dev / sum_gam
-    new_p0 <- mean(new_gam)
-    new_f0 <- dmvnorm(z, new_mu0, new_sig0)
-    weight <- 1 - new_gam
-    new_f1 <- rep(0, n)
-    which_z <- (new_gam <= thre_z)
-    lcd <- fmlogcondens::fmlcd(X=z[which_z,], w = weight[which_z] / sum(weight[which_z]))
-    new_f1[which_z] <- exp(lcd$logMLE)
+      ## E-step
+      new_f <- (p0 * f0 + (1 - p0) * f1)
+      new_gam <- p0 * f0 / new_f
 
-    ## Update
-    which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
-    diff <- max(abs(gam - new_gam)[which_gam])
-    converged <- (diff <= tol)
-    cat("   EM iteration:", k, ", Change in mdfdr fit = ", round(diff, 5), "\n")
-    p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
-    f1 <- new_f1
-    f0 <- new_f0
-    f <- new_f
-    gam <- new_gam
+      ## M-step
+
+      w_gam <- new_gam/sum(new_gam, na.rm = TRUE)
+      new_mu0 <- sum(w_gam*z, na.rm = TRUE)
+      new_sig0 <- sqrt(sum(w_gam*(z-new_mu0)^2, na.rm = TRUE))
+      new_p0 <- mean(new_gam, na.rm = TRUE)
+
+      new_f1 <- rep(0, n)
+      which_z <- (new_gam <= thre_z)
+      weight <- 1 - new_gam[which_z]
+      weight <- weight/sum(weight)
+      new_f1[which_z] <- exp(logcondens::activeSetLogCon(z[which_z], w = weight)$phi)
+
+      ## Update
+      which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
+      diff <- max(abs(gam - new_gam)[which_gam])
+      converged <- (diff <= tol)
+      cat("   EM iteration:", k, ", Change in fdr fit = ", round(diff, 5), "\n")
+      p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
+      f1 <- new_f1
+      f0 <- new_f0
+      f <- new_f
+      gam <- new_gam
+
+    }
+  }
+
+  else {
+    ## EM-step
+    k <- 0; converged <- 0
+    while ( (k < 3)|((k < max_iter) & (!converged)) ) {
+      k <- k + 1
+
+      ## E-step
+      new_f <- (p0 * f0 + (1 - p0) * f1)
+      new_gam <- p0 * f0 / new_f
+
+      if ((dim(z)[2] > 1) && (mono)) new_gam <- MonotoneFDR(z, new_gam)
+
+      ## M-step
+      sum_gam <- sum(new_gam)
+      new_mu0 <- as.vector(t(z) %*% new_gam) / sum_gam
+      dev <- t(t(z)-new_mu0) * sqrt(new_gam)
+      new_sig0 <- t(dev) %*% dev / sum_gam
+      new_p0 <- mean(new_gam)
+      new_f0 <- dmvnorm(z, new_mu0, new_sig0)
+      weight <- 1 - new_gam
+      new_f1 <- rep(0, n)
+      which_z <- (new_gam <= thre_z)
+      lcd <- fmlogcondens::fmlcd(X=z[which_z,], w = weight[which_z] / sum(weight[which_z]))
+      new_f1[which_z] <- exp(lcd$logMLE)
+
+      ## Update
+      which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
+      diff <- max(abs(gam - new_gam)[which_gam])
+      converged <- (diff <= tol)
+      cat("   EM iteration:", k, ", Change in mdfdr fit = ", round(diff, 5), "\n")
+      p0 <- new_p0; mu_0 <- new_mu0; sig0 <- new_sig0
+      f1 <- new_f1
+      f0 <- new_f0
+      f <- new_f
+      gam <- new_gam
+    }
+
   }
 
   res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
