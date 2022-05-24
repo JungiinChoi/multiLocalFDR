@@ -5,9 +5,13 @@
 \alias{pathways}
 \title{P-values for Pathways.}
 \format{
-A data frame with four variables: \code{Gene.Set}, \code{L}
-(peripheral leukocytes), \code{O} (orbital inflammatory), and
-\code{S} (sinus brushings).
+A data frame with four variables:
+\describe{
+\item{\code{Gene.Set}}{The name of pathways}
+\item{\code{L}}{P-values of upregulated genes in peripheral leukocytes}
+\item{\code{O}}{P-values of upregulated genes in orbital inflammatory disease}
+\item{\code{S}}{P-values of upregulated genes in sinus brushings}
+}
 }
 \usage{
 pathways

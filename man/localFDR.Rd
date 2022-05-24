@@ -47,6 +47,6 @@ Estimates of localFDR for given z-values / p-values.
 }
 \description{
 \code{localFDR} returns localFDR estimates for given multi-dimensional lists of z-values / p-values.
-\code{localFDR} imports \code{SpMix} for a two-component semiparametric
+\code{localFDR} imports \code{SPMix} for a two-component semiparametric
 mixture model to estimate the localFDR from the z-values / p-values.
 }

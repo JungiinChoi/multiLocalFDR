@@ -48,6 +48,6 @@ Estimates of FDR or localFDR for given z-values / p-values.
 }
 \description{
 \code{FDR} returns FDR estimates for given multi-dimensional lists of z-values / p-values.
-\code{FDR} imports \code{SpMix} for a two-component semiparametric
+\code{FDR} imports \code{SPMix} for a two-component semiparametric
 mixture model to estimate the FDR from the z-values / p-values.
 }

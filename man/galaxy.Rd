@@ -5,7 +5,11 @@
 \alias{galaxy}
 \title{Velocity of Galaxies}
 \format{
-An object of class \code{data.frame} with 1137 rows and 2 columns.
+A data frame with two variables:
+\describe{
+\item{\code{radius}}{Angular measurement of each globular cluster and star (arcmin)}
+\item{\code{velocity}}{Radial velocities (km/s)}
+}
 }
 \usage{
 galaxy
@@ -13,12 +17,5 @@ galaxy
 \description{
 Radial velocities of globular clusters of M104 with average v=1121 km/s,
 and Milky Way stars which have much lower radial velocities.
-}
-\details{
-#' @format A data frame with two variables:
-\describe{
-\item{\code{radius}}{Angular measurement of each globular cluster and star (arcmin)}
-\item{\code{velocity}}{Radial velocities (km/s)}
-}
 }
 \keyword{datasets}
