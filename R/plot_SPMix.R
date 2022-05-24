@@ -1,13 +1,13 @@
 #' @import ggplot2
 #'
 #'
-#' @title plotFDR estimation for given z-values
+#' @title plotMixture estimation for given z-values
 #'
-#' @description \code{plotFDR} returns plotFDR estimates and semiparametric
+#' @description \code{plotSPMix} returns plotSPMix estimates and semiparametric
 #' mixture density estimates for given multi-dimensional lists of z-values, which
 #' are the probit-transformed p-values.
-#' For the hypothesis testing \code{plotFDR} uses a two-component semiparametric
-#' mixture model to estimate the plotFDR from the p-values. The two pillars of the
+#' For the hypothesis testing \code{plotSPMix} uses a two-component semiparametric
+#' mixture model to estimate the plotSPMix from the p-values. The two pillars of the
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
 #'
@@ -26,7 +26,7 @@
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, p_value = FALSE,
+plotSPMix <- function(z, p0, mu0, sig0, f1, localFDR, p_value = FALSE,
                     alternative = "greater", thre_localFDR = 0.2, testing = TRUE)
 {
   which_z <- (localFDR <= thre_localFDR)
@@ -102,6 +102,12 @@ plotFDR <- function(z, p0, mu0, sig0, f1, localFDR, p_value = FALSE,
         scale_color_manual(values = c("#0072B2", "#D55E00"), name="")+
         theme_classic()
     }
+
+  } else if (d == 2){
+
+
+
+
 
   }
 

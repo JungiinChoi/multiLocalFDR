@@ -5,7 +5,7 @@
 #' @title FDR estimation for given z-values / p-values
 #'
 #' @description \code{FDR} returns FDR estimates for given multi-dimensional lists of z-values / p-values.
-#' \code{FDR} imports \code{SpMix} for a two-component semiparametric
+#' \code{FDR} imports \code{SPMix} for a two-component semiparametric
 #' mixture model to estimate the FDR from the z-values / p-values.
 #'
 #' @param z Matrix which column indicates z-values, probit-transformed p-values.
@@ -33,7 +33,7 @@
 FDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
                      mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01)
 {
-  SpMixParams <- SpMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
+  SPMixParams <- SPMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
                        Uthre_gam, Lthre_gam)
 
   z <- as.matrix(z)
@@ -49,9 +49,9 @@ FDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_ite
   }
 
   if (d == 1) {
-    F0 <- pnorm(z, SpMixParams$mu0, SpMixParams$sig0)
-    F1 <- ecdf(SpMixParams$f1)
-    p0 <- SpMixParams$p0
+    F0 <- pnorm(z, SPMixParams$mu0, SPMixParams$sig0)
+    F1 <- ecdf(SPMixParams$f1)
+    p0 <- SPMixParams$p0
     FDR <- p0 * F0 / (p0 * F0 + (1-p0) * F1)
   }
 

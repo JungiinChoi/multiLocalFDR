@@ -5,7 +5,7 @@
 #' @title FDR estimation for given z-values / p-values
 #'
 #' @description \code{localFDR} returns localFDR estimates for given multi-dimensional lists of z-values / p-values.
-#' \code{localFDR} imports \code{SpMix} for a two-component semiparametric
+#' \code{localFDR} imports \code{SPMix} for a two-component semiparametric
 #' mixture model to estimate the localFDR from the z-values / p-values.
 #'
 #' @param z Matrix which column indicates z-values, probit-transformed p-values.
@@ -33,8 +33,8 @@
 localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
                      mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01)
 {
-  SpMixParams <- SpMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
+  SPMixParams <- SPMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
                        Uthre_gam, Lthre_gam)
 
-  return(SpMixParams$localFDR)
+  return(SPMixParams$localFDR)
 }

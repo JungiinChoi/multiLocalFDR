@@ -4,10 +4,10 @@
 #'
 #' @title Semiparametric Mixture Density Estimation for given z-values
 #'
-#' @description \code{SpMix} returns localFDR estimates and semiparametric
+#' @description \code{SPMix} returns localFDR estimates and semiparametric
 #' mixture density estimates for given multi-dimensional lists of z-values, which
 #' are the probit-transformed p-values.
-#' For the hypothesis testing \code{SpMix} uses a two-component semiparametric
+#' For the hypothesis testing \code{SPMix} uses a two-component semiparametric
 #' mixture model to estimate the localFDR from the z-values. The two pillars of the
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
@@ -38,7 +38,7 @@
 #'
 #' @export
 
-SpMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************

@@ -7,9 +7,13 @@ NULL
 #' (1) peripheral leukocytes(L), (2) orbital inflammatory disease(O), and
 #' (3) sinus brushings(S) compared to healthy controls.
 #'
-#' @format A data frame with four variables: \code{Gene.Set}, \code{L}
-#' (peripheral leukocytes), \code{O} (orbital inflammatory), and
-#' \code{S} (sinus brushings).
+#' @format A data frame with four variables:
+#' \describe{
+#' \item{\code{Gene.Set}}{The name of pathways}
+#' \item{\code{L}}{P-values of upregulated genes in peripheral leukocytes}
+#' \item{\code{O}}{P-values of upregulated genes in orbital inflammatory disease}
+#' \item{\code{S}}{P-values of upregulated genes in sinus brushings}
+#' }
 "pathways"
 
 #' Velocity of Galaxies
@@ -17,7 +21,7 @@ NULL
 #' Radial velocities of globular clusters of M104 with average v=1121 km/s,
 #' and Milky Way stars which have much lower radial velocities.
 #'
-#'#' @format A data frame with two variables:
+#' @format A data frame with two variables:
 #' \describe{
 #' \item{\code{radius}}{Angular measurement of each globular cluster and star (arcmin)}
 #' \item{\code{velocity}}{Radial velocities (km/s)}
