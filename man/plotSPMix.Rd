@@ -9,12 +9,16 @@ plotSPMix(
   p0,
   mu0,
   sig0,
+  f,
   f1,
   localFDR,
   p_value = FALSE,
   alternative = "greater",
   thre_localFDR = 0.2,
-  testing = TRUE
+  testing = TRUE,
+  xlab = "",
+  ylab = "",
+  type = "3d"
 )
 }
 \arguments{
@@ -35,6 +39,8 @@ plotSPMix(
 \item{thre_localFDR}{Threshold of localFDR for null and alternative distribution (default: 0.2)}
 
 \item{testing}{TRUE if it's for hypothesis testing, FALSEif it's for density estimation}
+
+\item{type}{Type of 2-dimensional density plot (3d/contour plot)(default: "3d")}
 }
 \value{
 Plot estimated semiparametric mixture density and return threshold value.

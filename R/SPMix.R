@@ -45,7 +45,6 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
 
   NormMix <- function(z, tol = 5e-3, max_iter = 10)
   {
-
     k <- 0; converged <- 0
     z <- as.matrix(z)
     m_dist <- mahalanobis(z, 0, cov(z))
@@ -156,13 +155,13 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     p0 <- Params$p0
     mu0 <- Params$mu0
     sig0 <- Params$sig0
+    f0 <- dmvnorm(z, mu0, sig0)
     f1 <- dmvnorm(z, Params$mu1, Params$sig1)
   }
   gam <- f <- rep(0, n)
 
 
   if (d == 1) {
-
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
@@ -208,7 +207,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       new_f <- (p0 * f0 + (1 - p0) * f1)
       new_gam <- p0 * f0 / new_f
 
-      if ((dim(z)[2] > 1) && (mono)) new_gam <- MonotoneFDR(z, new_gam)
+      if (mono) new_gam <- MonotoneFDR(z, new_gam)
 
       ## M-step
       sum_gam <- sum(new_gam)
@@ -248,6 +247,5 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
                   f = f, f1 = f1, localFDR = gam, iter = k)
     }
   }
-
   return(res)
 }
