@@ -49,8 +49,6 @@ plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
     z = as.numeric(z)
     if (alternative == "greater" | alternative == "g"){
       thre <- min(z[which_z])
-      hist_ind <- hist(z, breaks=100)$breaks <= thre
-      hist_fill <- factor(hist_ind, levels = c(FALSE, TRUE), labels = c("white", "#E69F00"))
     } else{
       thre <- max(z[which_z])
     }
