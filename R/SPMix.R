@@ -190,10 +190,12 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       diff <- max(abs(gam - new_gam)[which_gam])
       converged <- (diff <= tol)
       cat("   EM iteration:", k, ", Change in fdr fit = ", round(diff, 5), "\n")
-      p0 <- new_p0; mu0 <- new_mu0; sig0 <- new_sig0
+      p0 <- new_p0
+      mu0 <- new_mu0
+      sig0 <- new_sig0
       f1 <- new_f1
       f0 <- new_f0
-      f <- new_f
+      f <- p0 * f0 + (1 - p0) * f1
       gam <- new_gam
 
     }
@@ -230,7 +232,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       p0 <- new_p0; mu0 <- new_mu0; sig0 <- new_sig0
       f1 <- new_f1
       f0 <- new_f0
-      f <- new_f
+      f <- p0 * f0 + (1 - p0) * f1
       gam <- new_gam
     }
   }
