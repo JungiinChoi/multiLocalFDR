@@ -124,7 +124,7 @@ plotSPMix(z_NG1d, NG1d$p0, NG1d$mu0, NG1d$sig0, NG1d$f, NG1d$f1, NG1d$localFDR,
 ### Normal + Gaussian Copula
 
 ```{r}
-
+n=3000
 n0 <- rbinom(1, n, p0)
 n1 <- n - n0
 sig0 <- matrix(c(1, 0.25, 0.25, 1), ncol = 2, byrow = T)
@@ -209,8 +209,6 @@ Orange dots are given data with lower local-FDR (localFDR $< 0.1$).
 ### Normal + Frank Copula
 
 ```{r}
-library(scatterplot3d)
-
 V_NG <- rCopula(n1, frankCopula(param = 0.5, dim = 3))
 z0_NG3d <- rmvnorm(n0, sigma = Sigma0)
 z1_NG3d <- qgamma(V_NG, shape = 12, rate = 4)
