@@ -1,6 +1,6 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
-#' @importFrom logcondens activeSetLogCon
+#' @importFrom LogConcDEAD mlelcd
 #' @importFrom graphics legend
 #' @import stats
 #' 
@@ -185,7 +185,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       which_z <- (new_gam <= thre_z)
       weight <- 1 - new_gam[which_z]
       weight <- weight/sum(weight)
-      new_f1[which_z] <- exp(logcondens::activeSetLogCon(z[which_z], w = weight)$phi)
+      new_f1[which_z] <- exp(LogConcDEAD::mlelcd(z[which_z], w = weight)$logMLE)
 
       ## Update
       which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
