@@ -1,26 +1,20 @@
 ---
 title: "Getting started with multiLocalFDR"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{documentation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
-The goal of this document is to get you up and running with `multiLocalFDR` as quickly as possible. 
-
-# Installation
-
-```{r}
-library(devtools)
-install_github("JungiinChoi/multiLocalFDR")
-```
-
-You can install multiLocalFDR from the Github directory. 
-For Mac users, you need to install Xcode before the installation. 
-(If Xcode is not installed, R automatically redirects you to install XCode.)
-
-```{r}
+```{r setup}
 library(multiLocalFDR)
 ```
 

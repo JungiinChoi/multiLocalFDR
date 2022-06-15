@@ -11,7 +11,7 @@ SPMix(
   alternative = "greater",
   max_iter = 30,
   mono = TRUE,
-  thre_z = 0.9,
+  thre_z = 0.99,
   Uthre_gam = 0.9,
   Lthre_gam = 0.01
 )

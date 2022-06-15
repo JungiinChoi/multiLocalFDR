@@ -16,19 +16,24 @@ plotSPMix(
   alternative = "greater",
   thre_localFDR = 0.2,
   testing = TRUE,
-  xlab = "",
-  ylab = "",
-  type = "3d"
+  xlab = "x",
+  ylab = "y",
+  type = "3d",
+  coord_legend = c(8, -5, 0.2)
 )
 }
 \arguments{
-\item{z}{Matrix which column indicates z-values, probit-transformed p-values.}
+\item{z}{Matrix which column indicates given data point, it can be raw-data, z-values or p-values.}
 
 \item{p0}{Prior probability for null distribution}
 
-\item{mu0}{sig0 Parameter estimates of normal null distribution, N(mu0, sig0^2)}
+\item{mu0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
 
-\item{f1}{Probability estimates of alternative distribution of mixture model for each z-value point.}
+\item{sig0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
+
+\item{f}{Probability estimates of mixture model for each given data point.}
+
+\item{f1}{Probability estimates of alternative distribution of mixture model for each given data point.}
 
 \item{localFDR}{localFDR estimates for given z-values}
 
@@ -40,7 +45,13 @@ plotSPMix(
 
 \item{testing}{TRUE if it's for hypothesis testing, FALSEif it's for density estimation}
 
+\item{xlab}{Label for x-axis on histogram or 3D scatter plot (default: "x")}
+
+\item{ylab}{Label for y-axis on 3D scatter plot (default: "x")}
+
 \item{type}{Type of 2-dimensional density plot (3d/contour plot)(default: "3d")}
+
+\item{coord_legend}{Coordinate of a legend for 3d scatter plot when given data is 2D. (default: c(8, -5, 0.2))}
 }
 \value{
 Plot estimated semiparametric mixture density and return threshold value.

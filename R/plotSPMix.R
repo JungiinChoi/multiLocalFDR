@@ -1,5 +1,7 @@
 #' @import ggplot2
 #' @import scatterplot3d
+#' @importFrom graphics legend
+#' @import stats
 #'
 #' @title plotMixture estimation for given z-values
 #'
@@ -11,16 +13,21 @@
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
 #'
-#' @param z Matrix which column indicates z-values, probit-transformed p-values.
+#' @param z Matrix which column indicates given data point, it can be raw-data, z-values or p-values.
 #' @param p0 Prior probability for null distribution
-#' @param mu0 sig0 Parameter estimates of normal null distribution, N(mu0, sig0^2)
-#' @param f1 Probability estimates of alternative distribution of mixture model for each z-value point.
+#' @param mu0 Parameter estimates of normal null distribution, N(mu0, sig0^2)
+#' @param sig0 Parameter estimates of normal null distribution, N(mu0, sig0^2)
+#' @param f Probability estimates of mixture model for each given data point.
+#' @param f1 Probability estimates of alternative distribution of mixture model for each given data point.
 #' @param localFDR localFDR estimates for given z-values
 #' @param p_value If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param thre_localFDR Threshold of localFDR for null and alternative distribution (default: 0.2)
 #' @param testing TRUE if it's for hypothesis testing, FALSEif it's for density estimation
+#' @param xlab Label for x-axis on histogram or 3D scatter plot (default: "x")
+#' @param ylab Label for y-axis on 3D scatter plot (default: "x")
 #' @param type Type of 2-dimensional density plot (3d/contour plot)(default: "3d")
+#' @param coord_legend Coordinate of a legend for 3d scatter plot when given data is 2D. (default: c(8, -5, 0.2))
 #'
 #' @return Plot estimated semiparametric mixture density and return threshold value.
 #'
@@ -138,7 +145,6 @@ plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
         theme_classic()
     } else {
       # 3D scatterplot
-      library(scatterplot3d)
       colors <- c("#999999", "#E69F00")
       colors <- colors[as.numeric(which_z)+1]
       scatterplot<- scatterplot3d(z[,1],z[,2],f, pch = 16, color=colors,

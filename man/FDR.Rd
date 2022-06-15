@@ -38,8 +38,6 @@ are used to compute the log-concave estimates f_1 in M-step.}
 \item{Uthre_gam}{Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
 
 \item{Lthre_gam}{Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
-
-\item{local}{If TRUE, \code{FDR} returns localFDR estimates for given z-values or p-values. IF FALSE, \code{FDR} returns FDR estimates. (default: FALSE)}
 }
 \value{
 Estimates of FDR or localFDR for given z-values / p-values.

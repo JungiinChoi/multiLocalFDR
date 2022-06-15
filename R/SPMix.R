@@ -1,8 +1,9 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
-#' @importFrom LogConcDEAD mlelcd
-#' @importFrom logcondens activeSetLogCondens
-#'
+#' @importFrom logcondens activeSetLogCon
+#' @importFrom graphics legend
+#' @import stats
+#' 
 #' @title Semiparametric Mixture Density Estimation for given z-values
 #'
 #' @description \code{SPMix} returns localFDR estimates and semiparametric
@@ -39,7 +40,7 @@
 #'
 #' @export
 
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.99,
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
@@ -184,7 +185,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       which_z <- (new_gam <= thre_z)
       weight <- 1 - new_gam[which_z]
       weight <- weight/sum(weight)
-      new_f1[which_z] <- exp(LogConcDEAD::mlelcd(z[which_z], w = weight)$logMLE)
+      new_f1[which_z] <- exp(logcondens::activeSetLogCon(z[which_z], w = weight)$phi)
 
       ## Update
       which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
