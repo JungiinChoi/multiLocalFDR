@@ -1,6 +1,7 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
 #' @importFrom LogConcDEAD mlelcd
+#' @importFrom logcondens activeSetLogCondens
 #'
 #' @title Semiparametric Mixture Density Estimation for given z-values
 #'
@@ -38,7 +39,7 @@
 #'
 #' @export
 
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.99,
                   Uthre_gam = 0.9, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
