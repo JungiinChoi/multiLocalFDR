@@ -1,165 +1,324 @@
 ---
-title: "Introduction to multiLocalFDR"
-output: rmarkdown::html_vignette
-bibliography: papers.bib
-description: >
-  Start here if this is your first time using dplyr. You'll learn the basic   
-  philosophy, the most important data manipulation verbs, and the pipe, `%>%`, 
-  which allows you to combine multiple verbs together to solve real problems.
-vignette: >
-  %\VignetteIndexEntry{Introduction to multiLocalFDR}
-  %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+title: "Getting started with multiLocalFDR"
+output: html_document
 ---
 
-```{r, echo = FALSE, message = FALSE}
-knitr::opts_chunk$set(collapse = T, comment = "#>")
-options(tibble.print_min = 4L, tibble.print_max = 4L)
-library(SpMix)
-set.seed(1014)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-When working with data you must:
+The goal of this document is to get you up and running with `multiLocalFDR` as quickly as possible. 
 
-* Figure out what you want to do.
-
-* Describe those tasks in the form of a computer program.
-
-* Execute the program.
-
-The dplyr package makes these steps fast and easy:
-
-* By constraining your options, it helps you think about your data manipulation 
-  challenges.
-
-* It provides simple "verbs", functions that correspond to the most common data 
-  manipulation tasks, to help you translate your thoughts into code.
-
-* It uses efficient backends, so you spend less time waiting for the computer.
-
-This document introduces you to dplyr's basic set of tools, and shows you how to apply them to data frames. dplyr also supports databases via the dbplyr package, once you've installed, read `vignette("dbplyr")` to learn more.
-
-## Data: starwars
-
-To explore the basic data manipulation verbs of dplyr, we'll use the dataset `starwars`. This dataset contains `r nrow(starwars)` characters and comes from the [Star Wars API](https://swapi.dev), and is documented in `?starwars`
+# Installation
 
 ```{r}
-dim(starwars)
-starwars
+library(devtools)
+install_github("JungiinChoi/multiLocalFDR")
 ```
 
-Note that `starwars` is a tibble, a modern reimagining of the data frame. It's particularly useful for large datasets because it only prints the first few rows. You can learn more about tibbles at <https://tibble.tidyverse.org>; in particular you can convert data frames to tibbles with `as_tibble()`.
-
-## Single table verbs
-
-dplyr aims to provide a function for each basic verb of data manipulation. These verbs can be organised into three categories based on the component of the dataset that they work with:
-
-* Rows:
-  * `filter()` chooses rows based on column values.
-  * `slice()` chooses rows based on location.
-  * `arrange()` changes the order of the rows.
-  
-* Columns:
-  * `select()` changes whether or not a column is included.
-  * `rename()` changes the name of columns.
-  * `mutate()` changes the values of columns and creates new columns.
-  * `relocate()` changes the order of the columns.
-
-* Groups of rows:
-  * `summarise()` collapses a group into a single row.
-  
-### The pipe
-
-All of the dplyr functions take a data frame (or tibble) as the first argument. Rather than forcing the user to either save intermediate objects or nest functions, dplyr provides the `%>%` operator from magrittr. `x %>% f(y)` turns into `f(x, y)` so the result from one step is then "piped" into the next step. You can use the pipe to rewrite multiple operations that you can read left-to-right, top-to-bottom (reading the pipe operator as "then"). 
-
-### Filter rows with `filter()`
-
-`filter()` allows you to select a subset of rows in a data frame. Like all single verbs, the first argument is the tibble (or data frame). The second and subsequent arguments refer to variables within that data frame, selecting rows where the expression is `TRUE`.
-
-For example, we can select all character with light skin color and brown eyes with:
+You can install multiLocalFDR from the Github directory. 
+For Mac users, you need to install Xcode before the installation. 
+(If Xcode is not installed, R automatically redirects you to install XCode.)
 
 ```{r}
-starwars %>% filter(skin_color == "light", eye_color == "brown")
+library(multiLocalFDR)
 ```
 
-This is roughly equivalent to this base R code:
+# Main Functions
 
-```{r, eval = FALSE}
-starwars[starwars$skin_color == "light" & starwars$eye_color == "brown", ]
+## SPMix()
+
+```{r eval=FALSE}
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01 )
 ```
 
-### Arrange rows with `arrange()`
+* z: Given matrix which column indicates raw data. 
+* tol: tolerance value for determining convergence of EM-type algorithm
+* p-value: if TRUE, than we assume that the input is p-value $\in [0,1]$.
+* alternative: if 'greater', than it assumes alternative distribution is greater than (on the right side of) null density. This applies for only univariate data.
 
-`arrange()` works similarly to `filter()` except that instead of filtering or selecting rows, it reorders them. It takes a data frame, and a set of column names (or more complicated expressions) to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+## plotSPMix()
+
+```{r eval=FALSE}
+plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
+                      alternative = "greater", thre_localFDR = 0.2, testing = TRUE,
+                      xlab = "x", ylab = "y", coord_legend = c(8, -5, 0.2))
+```
+
+* testing: If TRUE, the visualization is for hypothesis testing, otherwise, density estimation.
+
+# Simulations
+
+In this section, we will use __SPMix()__ to estimate mixture density and compute local-FDR for generated data. Also, __plotSPMix()__ can visualize the fitted results
+for both univariate and 2-dimensional data. 
+
+## required libraries
 
 ```{r}
-starwars %>% arrange(height, mass)
+library(copula)
+library(mclust)
+library(mvtnorm)
+library(ggplot2)
+library(scatterplot3d)
 ```
 
-Use `desc()` to order a column in descending order:
+## Univaraite
+
+### Normal + Normal
+
+Let's consider randomly generated 1000 data from the density below. 
+
+$$f = 0.8 \cdot N(0,1) + 0.2 \cdot N(3.5, 0.5^2)$$
 
 ```{r}
-starwars %>% arrange(desc(height))
+n=10000
+p0=0.8
+n0 <- rbinom(1, n, p0)
+n1 <- n - n0
+z0 <- rnorm(n0)
+z1 <- rnorm(n1, mean = 3.5, sd = 0.5)
+z_NN1d <- c(z0, z1)
+
+NN1d <- SPMix(z_NN1d, tol = 1e-10, thre_z = 0.99, Uthre_gam = 0.9)
+summary(NN1d)
 ```
 
-###  Choose rows using their position with `slice()`
-
-`slice()` lets you index rows by their (integer) locations. It allows you to select, remove, and duplicate rows. 
-
-We can get characters from row numbers 5 through 10.
-```{r}
-starwars %>% slice(5:10)
-```
-
-It is accompanied by a number of helpers for common use cases:
-
-* `slice_head()` and `slice_tail()` select the first or last rows.
-
-```{r}
-starwars %>% slice_head(n = 3)
-```
-
-* `slice_sample()` randomly selects rows. Use the option prop to choose a certain proportion of the cases.
+__SPMix()__ returns null probability($p0$), null parameters($\mu_0, \sig_0$), 
+estimated density and nonnull density($f, f_1$) and estimated local-FDR value.
 
 ```{r}
-starwars %>% slice_sample(n = 5)
-starwars %>% slice_sample(prop = 0.1)
+# Hypothesis testing 
+plotSPMix(z_NN1d, NN1d$p0, NN1d$mu0, NN1d$sig0, NN1d$f, NN1d$f1, NN1d$localFDR)
 ```
-Use `replace = TRUE` to perform a bootstrap sample. If needed, you can weight the sample with the `weight` argument.
 
-* `slice_min()` and `slice_max()` select rows with highest or lowest values of a variable. Note that we first must choose  only the values which are not NA.
+__plotSPMix()__ can be used for both hypothesis testing and density estimation. 
+If testing is TRUE (default), it gives density estimation for both normal and nonparametric parts. Also, threshold of given data by given local-FDR threshold 
+is marked with dashed line. 
 
 ```{r}
-starwars %>%
-  filter(!is.na(height)) %>%
-  slice_max(height, n = 3)
+# Density Estimation
+plotSPMix(z_NN1d, NN1d$p0, NN1d$mu0, NN1d$sig0, NN1d$f, NN1d$f1, NN1d$localFDR,
+          testing = FALSE)
 ```
 
-### Select columns with `select()`
+If testing is FALSE, it gives density estimation and classifies two parts(normal/nonparametric) by local-FDR value (local-FDR $> 0.5$?). 
 
-Often you work with large datasets with many columns but only a few are actually of interest to you. `select()` allows you to rapidly zoom in on a useful subset using operations that usually only work on numeric variable positions:
+### Normal + Gamma
+
+What if alternative distribution is not normal?
+
+$$f = 0.8 \cdot N(0,1) + 0.2 \cdot Gamma(shape = 12, rate = 4)$$
 
 ```{r}
-# Select columns by name
-starwars %>% select(hair_color, skin_color, eye_color)
-# Select all columns between hair_color and eye_color (inclusive)
-starwars %>% select(hair_color:eye_color)
-# Select all columns except those from hair_color to eye_color (inclusive)
-starwars %>% select(!(hair_color:eye_color))
-# Select all columns ending with color
-starwars %>% select(ends_with("color"))
+z1_gamma <- rgamma(n1, shape = 12, rate = 4)
+z_NG1d <- c(z0, z1_gamma)
+
+NG1d <- SPMix(z_NG1d, tol = 1e-10, thre_z = 0.99)
 ```
-
-There are a number of helper functions you can use within `select()`, like `starts_with()`, `ends_with()`, `matches()` and `contains()`. These let you quickly match larger blocks of variables that meet some criterion. See `?select` for more details.
-
-You can rename variables with `select()` by using named arguments:
 
 ```{r}
-starwars %>% select(home_world = homeworld)
+# Hypothesis testing 
+plotSPMix(z_NG1d, NG1d$p0, NG1d$mu0, NG1d$sig0, NG1d$f, NG1d$f1, NG1d$localFDR)
+
+# Density Estimation
+plotSPMix(z_NG1d, NG1d$p0, NG1d$mu0, NG1d$sig0, NG1d$f, NG1d$f1, NG1d$localFDR,
+          testing = FALSE)
 ```
 
-But because `select()` drops all the variables not explicitly mentioned, it's not that useful. Instead, use `rename()`:
+## 2-dimensional data
+
+### Normal + Gaussian Copula
 
 ```{r}
-starwars %>% rename(home_world = homeworld)
+
+n0 <- rbinom(1, n, p0)
+n1 <- n - n0
+sig0 <- matrix(c(1, 0.25, 0.25, 1), ncol = 2, byrow = T)
+V <- rCopula(n1, ellipCopula(family = "normal", param = 0.5, dim = 2))
+z0 <- rmvnorm(n0, sigma = sig0)
+z1 <- qnorm(V, mean = 3.5, sd = .5)
+z_NN2d <- data.frame(rbind(z0, z1))
+
+ggplot(z_NN2d, aes(x = z_NN2d[,1], y = z_NN2d[,2])) +
+  geom_point(aes(color = factor(c(rep(1,n0), rep(2,n1)), labels = c("Normal(Null)", "Gaussian Copula(Alternative)")))) +
+  scale_color_manual(values = c("#999999", "#E69F00"), name="")  +
+  labs(title = "Random Generated Mixture density data", x="x", y = "y") +
+  theme_classic()
 ```
+
+
+```{r}
+NN2d <- SPMix(z_NN2d, tol = 1e-10)
+
+plotSPMix(z_NN2d, NN2d$p0, NN2d$mu0, NN2d$sig0, NN2d$f, NN2d$f1, NN2d$localFDR, 
+          xlab = "x", ylab = "y")
+```
+
+__plotSPMix()__ also provides visualization of 2-dimensional data.
+You can set name for x-axis and y-axis using __xlab__, __ylab__. 
+
+### Normal + Frank Copula
+
+Let's consider nonnull distribution as Frank copula with marginal gamma distribution.
+
+```{r}
+z1_gamma <- qgamma(V, shape = 12, rate = 4)
+z_NG <- data.frame(rbind(z0, z1_gamma))
+
+ggplot(z_NG, aes(x = z_NG[,1], y = z_NG[,2])) +
+  geom_point(aes(color = factor(c(rep(1,n0), rep(2,n1)), labels = c("Normal", "Gamma")))) +
+  scale_color_manual(values = c("#999999", "#E69F00"), name="")  +
+  labs(title = "Random Generated Normal/Gamma Mixture", x="x", y = "y") +
+  theme_classic()
+```
+
+```{r}
+NG <- SPMix(z_NG, tol = 1e-10)
+
+plotSPMix(z_NG, NG$p0, NG$mu0, NG$sig0, NG$f, NG$f1, NG$localFDR, 
+          xlab = "x", ylab = "y")
+```
+
+## 3-dimensional data
+
+### Normal + Gaussian Copula
+
+Let's consider null distribution and multivariate normal density and nonnull distribution as Gaussian copula with marginal normal distribution.
+
+```{r}
+library(scatterplot3d)
+
+Sigma0 <- matrix(c(1, 0.25, 0.25, 0.25, 1, 0.25, 0.25,0.25,1), ncol = 3)
+n0 <- rbinom(1, n, p0)
+n1 <- n - n0
+V <- rCopula(n1, ellipCopula(family = "normal", param = 0.5, dim = 3))
+z0_NN3d <- rmvnorm(n0, sigma = Sigma0)
+z1_NN3d <- qnorm(V, mean = 3.5, sd = .5)
+z_NN3d <- rbind(z0_NN3d, z1_NN3d)
+
+NN3d <- SPMix(z_NN3d, 1e-10)
+```
+
+```{r}
+colors <- c("#999999", "#E69F00")
+colors <- colors[as.numeric(NN3d$localFDR <= 0.1)+1]
+scatterplot_NN<- scatterplot3d(z_NN3d, pch = 16, color=colors,
+                            xlab = "x", ylab = "y", zlab = "z")
+legend_pathway <- factor((NN3d$localFDR <= 0.1), levels = c(FALSE, TRUE), 
+                         labels = c("Nonsignificant", "Significant"))
+legend(scatterplot_NN$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
+       col = c("#999999", "#E69F00"), pch = 16)
+```
+
+Orange dots are given data with lower local-FDR (localFDR $< 0.1$).
+
+### Normal + Frank Copula
+
+```{r}
+library(scatterplot3d)
+
+V_NG <- rCopula(n1, frankCopula(param = 0.5, dim = 3))
+z0_NG3d <- rmvnorm(n0, sigma = Sigma0)
+z1_NG3d <- qgamma(V_NG, shape = 12, rate = 4)
+z_NG3d <- rbind(z0_NG3d, z1_NG3d)
+
+NG3d <- SPMix(z_NG3d, 1e-10)
+```
+
+```{r}
+colors <- c("#999999", "#E69F00")
+colors <- colors[as.numeric(NG3d$localFDR <= 0.1)+1]
+scatterplot_NG<- scatterplot3d(z_NG3d, pch = 16, color=colors,
+                            xlab = "x", ylab = "y", zlab = "z")
+legend_pathway <- factor((NG3d$localFDR <= 0.2), levels = c(FALSE, TRUE), 
+                         labels = c("Nonsignificant", "Significant"))
+legend(scatterplot_NG$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
+       col = c("#999999", "#E69F00"), pch = 16)
+```
+
+# Applications
+
+## Galaxy Velocity (Univariate)
+
+Internal data 'galaxy' is a data frame including radial velocities of globular clusters of
+M104 and Milky Way stars. It's known that Milky Way stars have much lower radial velocities.
+
+```{r}
+data("galaxy", package = "multiLocalFDR")
+head(galaxy)
+```
+
+```{r}
+z_galaxy <- galaxy$velocity
+params <- SPMix(z_galaxy, alternative = "less")
+```
+
+* z_galaxy: input data does not have to be z-values or p-values.
+* alternative = "less": we know that velocities of M104 are much faster and 
+follow Normal density. 
+
+```{r}
+plotSPMix(z_galaxy, params$p0, params$mu0, params$sig0, params$f, params$f1, 
+          params$localFDR, alternative = "greater", testing = FALSE,
+                      xlab = "velocity(km/s)")
+```
+
+## Pathways (Multivariate)
+
+Internal data 'pathways' is a list of significantly upregulated genes in three published studies: (1) peripheral leukocytes(L), (2) orbital inflammatory disease(O), and (3) sinus brushings(S) compared to healthy controls.
+
+```{r}
+data("pathways", package = "multiLocalFDR")
+head(pathways)
+```
+
+### Univariate analysis
+
+```{r}
+## SpMix for each pathway
+params_L <- SPMix(pathways[,2], p_value = TRUE, tol = 1e-10)
+params_O <- SPMix(pathways[,3], p_value = TRUE, tol = 1e-10)
+params_S <- SPMix(pathways[,4], p_value = TRUE, tol = 1e-10)
+
+## Plot results for each pathway
+plotSPMix(pathways[,2], params_L$p0, params_L$mu0, params_L$sig0, params_L$f, 
+          params_L$f1, params_L$localFDR, p_value = TRUE, xlab = "Peripheral Leukocytes")
+plotSPMix(pathways[,3], params_O$p0, params_O$mu0, params_O$sig0, params_O$f, 
+          params_O$f1, params_O$localFDR, p_value = TRUE, xlab = "Orbital Tissue")
+plotSPMix(pathways[,4], params_S$p0, params_S$mu0, params_S$sig0, params_S$f, 
+          params_S$f1, params_S$localFDR, p_value = TRUE, xlab = "Sinus Brushings")
+```
+
+### Multivariate Analysis
+
+```{r}
+## SpMix for 3-dimensional data
+params_LOS <- SPMix(pathways[,2:4], p_value = TRUE, tol = 1e-10)
+
+## Pathways which md-fdr <= 0.01
+head(pathways[params_LOS$localFDR <= 0.01,]$Gene.Set)
+length(pathways[params_LOS$localFDR <= 0.01,]$Gene.Set)
+
+# md-fdr dataframe
+pathways_df <- pathways
+pathways_df$localFDR <- params_LOS$localFDR
+pathways_df$sgnf <- (params_LOS$localFDR <= 0.01)
+head(pathways_df)
+```
+
+### 3d scatter plot 
+
+```{r}
+colors <- c("#999999", "#E69F00")
+colors <- colors[as.numeric(pathways_df$sgnf)+1]
+scatterplot<- scatterplot3d(qnorm(1-as.matrix(pathways_df[,2:4])), pch = 16, color=colors,
+              xlab = "Peripheral Leukocytes",
+              ylab = "Orbital Tissue",
+              zlab = "Sinus Brushings")
+
+legend_pathway <- factor(pathways_df$sgnf, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+legend(scatterplot$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
+       col = c("#999999", "#E69F00"), pch = 16)
+```
+
+Orange dots are pathways with md-fdr $< 0.01$. 

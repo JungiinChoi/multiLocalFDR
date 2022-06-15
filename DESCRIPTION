@@ -1,16 +1,26 @@
 Package: multiLocalFDR
 Type: Package
-Title: Semiparametric mixture method for local false discovery rate estimation
+Title: Multi-dimensional local false discovery rate estimation 
 Version: 1.0.0
-Author: Jungin Choi
-Maintainer: Jungin Choi <serimtech07@snu.ac.kr>
-Depends: R (>= 3.0)
-Imports: mclust, fmlogcondens, logcondens, ggplot2
+Authors@R: c(person("Jungin", "Choi", role=c("aut", "cre"),
+                    email = "jchoi177@jhu.edu"),
+             person("Seok-Oh", "Jeong", role="aut"),
+	    person("Dongseok", "Choi", role="aut"),
+             person("Woncheol", "Jang", role="aut"))
+Author: Fabian Rathke [aut, cre],
+	Seok-Oh Jeong [aut],
+	Dongseok Choi [aut],
+	Woncheol Jang [aut]
+Maintainer: Jungin Choi <jchoi177@jhu.edu>
+Imports: mclust, fmlogcondens, logcondens, ggplot2, tibble, scatterplot3d
 Remotes: JungiinChoi/fmlogcondens
-Description: Software for computing a semiparametric mixture model to estimate the local false discovery rates from the p-values. The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. Our method outperforms other existing methods, in particular when the proportion of null is not that high. It is robust against the misspecification of alternative distribution. A unique feature of our method is that it can be extended to compute the local false discovery rates by combining multiple lists of p-values. As a reference see Seok-Oh Jeong, Dongseok Choi and Woncheol Jang (2020) <doi.org/10.1214/20-AOAS1341>.
-License: What license is it under?
-Encoding: UTF-8
-LazyData: true
+Description: Estimation of one- or multi-dimensional local false discovery rate (FDR) and its visualization. For given raw data/z-values/p-values, it computes estimated density and local-FDR using our semiparametric mixture method. Moreover, it provides visualization of fitted density for one- or two-dimensional data. The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. Our method outperforms other existing methods, in particular when the proportion of null is not that high. It is robust against the misspecification of alternative distribution. As a reference see Seok-Oh Jeong, Dongseok Choi and Woncheol Jang (2020), <doi.org/10.1214/20-AOAS1341>.
 Suggests: knitr, rmarkdown
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
+Encoding: UTF-8
+NeedsCompilation: yes
+License: GPL (>= 2)
+LazyLoad: yes
+LazyData: yes
+Depends: R (>= 4.0.0)
