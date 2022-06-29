@@ -25,7 +25,8 @@
 #' @param thre_localFDR Threshold of localFDR for null and alternative distribution (default: 0.2)
 #' @param testing TRUE if it's for hypothesis testing, FALSEif it's for density estimation
 #' @param xlab Label for x-axis on histogram or 3D scatter plot (default: "x")
-#' @param ylab Label for y-axis on 3D scatter plot (default: "x")
+#' @param ylab Label for y-axis on 3D scatter plot (default: "y")
+#' @param zlab Label for z-axis on 3D scatter plot (default: "z")
 #' @param type Type of 2-dimensional density plot (3d/contour plot)(default: "3d")
 #' @param coord_legend Coordinate of a legend for 3d scatter plot when given data is 2D. (default: c(8, -5, 0.2))
 #'
@@ -36,7 +37,7 @@
 #' @export
 plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
                       alternative = "greater", thre_localFDR = 0.2, testing = TRUE,
-                      xlab = "x", ylab = "y", type = "3d", coord_legend = c(8, -5, 0.2))
+                      xlab = "x", ylab = "y", zlab = "z", type = "3d", coord_legend = c(8, -5, 0.2))
 {
   which_z <- (localFDR <= thre_localFDR)
 
@@ -155,5 +156,15 @@ plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
       legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
              legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
     }
+  } else if (d == 3) {
+    colors <- c("#999999", "#E69F00")
+    colors <- colors[as.numeric(which_z)+1]
+    scatterplot<- scatterplot3d(z[,1],z[,2],z[,3], pch = 16, color=colors,
+                                xlab = xlab, ylab = ylab, zlab = zlab)
+    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+    legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
+    legend_3d <- if (testing) {legend_testing} else {legend_density}
+    legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
+           legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
   }
 }

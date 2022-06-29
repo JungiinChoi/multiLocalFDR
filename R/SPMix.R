@@ -40,8 +40,8 @@
 #'
 #' @export
 
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9,
-                  Uthre_gam = 0.9, Lthre_gam = 0.01 )
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 1-1e-5,
+                  Uthre_gam = 0.99, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
 
@@ -126,8 +126,9 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     }
   } else {
     raw_mean = mean(z)
-    if (d == 1) {raw_sd = sd(z)} else {raw_cov = cov(z)}
-    z = scale(z)
+    if (d == 1) {
+      raw_sd = sd(z); z = scale(z)
+    }
   }
 
   ## Initial step: to fit normal mixture
