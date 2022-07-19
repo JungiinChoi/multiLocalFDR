@@ -262,15 +262,11 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   FDR <- p0 * F0 / F_tmp
   
   if (alternative == "greater" | alternative == "g") {
-    thre_FDR <- max(z_NN1d[NN1d$FDR > 1])
-    for (i in 1:n){
-      FDR[i] = if (z_NN1d[i] < thre_FDR) {1} else {NN1d$FDR[i]}
-    }
+    thre_FDR <- max(z[FDR > 1])
+    FDR[z < thre_FDR] = 1
     } else{
-      thre_FDR <- min(z_NN1d[NN1d$FDR > 1])
-      for (i in 1:n){
-        FDR[i] = if (z_NN1d[i] > thre_FDR) {1} else {NN1d$FDR[i]}
-      }
+      thre_FDR <- min(z[FDR > 1])
+      FDR[z > thre_FDR] = 1
   }
 
   # return results
