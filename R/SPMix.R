@@ -181,7 +181,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 3) | ((k < max_iter) & (!converged)) ) {
+    while ( (k < 4) | ((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
@@ -218,7 +218,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   } else {
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 3)|((k < max_iter) & (!converged)) ) {
+    while ( (k < 4)|((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
@@ -245,7 +245,9 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       diff <- max(abs(gam - new_gam)[which_gam])
       converged <- (diff <= tol)
       cat("   EM iteration:", k, ", Change in mdfdr fit = ", round(diff, 5), "\n")
-      p0 <- new_p0; mu0 <- new_mu0; sig0 <- new_sig0
+      p0 <- new_p0
+      mu0 <- new_mu0
+      sig0 <- new_sig0
       f1 <- new_f1
       f0 <- new_f0
       f <- p0 * f0 + (1 - p0) * f1
@@ -256,7 +258,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   # compute FDR
 
   F0 <- if (d ==1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
-  F <- cumsum(f)
+  F <- if (d ==1) {ecdf(z)} else {mult.ecdf(z)}
   FDR <- p0 * F0 / F
 
   # return results
