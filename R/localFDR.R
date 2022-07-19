@@ -17,8 +17,6 @@
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, FDR is in ascending order of z-values. (default: TRUE)
-#' @param thre_z Threshold value which only z-values smaller than thre.z
-#' are used to compute the log-concave estimates f_1 in M-step.
 #' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #'
@@ -30,9 +28,9 @@
 #'
 
 localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
-                     mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01)
+                     mono = TRUE, Uthre_gam = 0.99, Lthre_gam = 0.01)
 {
-  SPMixParams <- SPMix(z, tol, p_value, alternative, max_iter, mono, thre_z,
+  SPMixParams <- SPMix(z, tol, p_value, alternative, max_iter, mono, 
                        Uthre_gam, Lthre_gam)
 
   return(SPMixParams$localFDR)

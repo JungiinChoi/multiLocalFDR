@@ -1,5 +1,6 @@
 #' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
+#' @importFrom mvtnorm pmvnorm
 #' @importFrom LogConcDEAD mlelcd
 #' @importFrom graphics legend
 #' @import stats
@@ -23,8 +24,6 @@
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
 #' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
-#' @param thre_z Threshold value which only z-values smaller than thre.z
-#' are used to compute the log-concave estimates f_1 in M-step.
 #' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #'
@@ -40,7 +39,7 @@
 #'
 #' @export
 
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 1-1e-5,
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, 
                   Uthre_gam = 0.99, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
@@ -112,8 +111,22 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
 
     return(MFDR)
   }
+  
+  mult.ecdf <- function(x)
+  {
+    x <- as.matrix(x)
+    n <- nrow(x)
+    d <- ncol(x)
+    Fn <- rep(0, n)
+    for ( i in 1:n ) {
+      tmp <- matrix(x[i,], n, d, byrow = TRUE)
+      Fn[i] <- mean(rowSums(x <= tmp) == d)
+    }
+    return(Fn)
+  }
 
   # ******************* MAIN FUNCTION *******************************
+  thre_z = 1-1e-5
   z <- as.matrix(z)
   n <- dim(z)[1]
   d <- dim(z)[2]
@@ -239,14 +252,23 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       gam <- new_gam
     }
   }
+  
+  # compute FDR
+
+  F0 <- if (d ==1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
+  F <- cumsum(f)
+  FDR <- p0 * F0 / F
+
+  # return results
 
   if (p_value) {
     res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
-                f = f, f1 = f1, localFDR = gam, iter = k)
+                f = f, f1 = f1, F = F, localFDR = gam, FDR = FDR, iter = k)
   } else {
     if (d == 1){
       res <- list(p0 = p0, mu0 = mu0*raw_sd + raw_mean, sig0 = sig0*raw_sd,
-                  f = f/raw_sd, f1 = f1/raw_sd, localFDR = gam, iter = k)
+                  f = f/raw_sd, f1 = f1/raw_sd, F = F/raw_sd, localFDR = gam, 
+                  FDR = FDR, iter = k)
     } else {
       res <- list(p0 = p0, mu0 = mu0%*%raw_cov + raw_mean, sig0 = sig0%*%raw_cov,
                   f = f, f1 = f1, localFDR = gam, iter = k)
