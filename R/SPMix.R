@@ -258,7 +258,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   # compute FDR
 
   F0 <- if (d ==1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
-  F <- if (d ==1) {ecdf(z)} else {mult.ecdf(z)}
+  F <- if (d ==1) {ecdf(z)(z)} else {mult.ecdf(z)}
   FDR <- p0 * F0 / F
 
   # return results
@@ -269,7 +269,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   } else {
     if (d == 1){
       res <- list(p0 = p0, mu0 = mu0*raw_sd + raw_mean, sig0 = sig0*raw_sd,
-                  f = f/raw_sd, f1 = f1/raw_sd, F = F/raw_sd, localFDR = gam, 
+                  f = f/raw_sd, f1 = f1/raw_sd, F = F, localFDR = gam, 
                   FDR = FDR, iter = k)
     } else {
       res <- list(p0 = p0, mu0 = mu0%*%raw_cov + raw_mean, sig0 = sig0%*%raw_cov,
