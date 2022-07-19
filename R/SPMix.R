@@ -152,7 +152,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       p0 <- mean(z <= q0)
       mu0 <- mean(z[z <= q0])
       sig0 <- sd(z[z <= q0])
-      f0 <- dmvnorm(z, mu0, sig0)
+      f0 <- mclust::dmvnorm(z, mu0, sig0)
       mu1 <- mean(z[z > q0])
       sig1 <- sd(z[z > q0])
       f1 <- dnorm(z, mu1, sig1)
@@ -161,7 +161,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
       p0 <- mean(z >= q0)
       mu0 <- mean(z[z >= q0])
       sig0 <- sd(z[z >= q0])
-      f0 <- dmvnorm(z, mu0, sig0)
+      f0 <- mclust::dmvnorm(z, mu0, sig0)
       mu1 <- mean(z[z < q0])
       sig1 <- sd(z[z < q0])
       f1 <- dnorm(z, mu1, sig1)
@@ -171,8 +171,8 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     p0 <- Params$p0
     mu0 <- Params$mu0
     sig0 <- Params$sig0
-    f0 <- dmvnorm(z, mu0, sig0)
-    f1 <- dmvnorm(z, Params$mu1, Params$sig1)
+    f0 <- mclust::dmvnorm(z, mu0, sig0)
+    f1 <- mclust::dmvnorm(z, Params$mu1, Params$sig1)
   }
   gam <- f <- rep(0, n)
 
@@ -257,19 +257,19 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   
   # compute FDR
 
-  F0 <- if (d ==1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
-  F <- if (d ==1) {ecdf(z)(z)} else {mult.ecdf(z)}
-  FDR <- p0 * F0 / F
+  F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
+  F_tmp <- if (d == 1) {ecdf(z)(z)} else {mult.ecdf(z)}
+  FDR <- p0 * F0 / F_tmp
 
   # return results
 
   if (p_value) {
     res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
-                f = f, f1 = f1, F = F, localFDR = gam, FDR = FDR, iter = k)
+                f = f, f1 = f1, F = F_tmp, localFDR = gam, FDR = FDR, iter = k)
   } else {
     if (d == 1){
       res <- list(p0 = p0, mu0 = mu0*raw_sd + raw_mean, sig0 = sig0*raw_sd,
-                  f = f/raw_sd, f1 = f1/raw_sd, F = F, localFDR = gam, 
+                  f = f/raw_sd, f1 = f1/raw_sd, F = F_tmp, localFDR = gam, 
                   FDR = FDR, iter = k)
     } else {
       res <- list(p0 = p0, mu0 = mu0%*%raw_cov + raw_mean, sig0 = sig0%*%raw_cov,
