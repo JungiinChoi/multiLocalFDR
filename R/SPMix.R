@@ -260,6 +260,18 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
   F_tmp <- if (d == 1) {ecdf(z)(z)} else {mult.ecdf(z)}
   FDR <- p0 * F0 / F_tmp
+  
+  if (alternative == "greater" | alternative == "g") {
+    thre_FDR <- max(z_NN1d[NN1d$FDR > 1])
+    for (i in 1:n){
+      FDR[i] = if (z_NN1d[i] < thre_FDR) {1} else {NN1d$FDR[i]}
+    }
+    } else{
+      thre_FDR <- min(z_NN1d[NN1d$FDR > 1])
+      for (i in 1:n){
+        FDR[i] = if (z_NN1d[i] > thre_FDR) {1} else {NN1d$FDR[i]}
+      }
+  }
 
   # return results
 
