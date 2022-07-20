@@ -181,7 +181,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 4) | ((k < max_iter) & (!converged)) ) {
+    while ( (k < 10) | ((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
