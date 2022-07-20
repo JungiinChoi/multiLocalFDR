@@ -181,7 +181,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 10) | ((k < max_iter) & (!converged)) ) {
+    while ( (k < 3) | ((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
@@ -261,12 +261,14 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   F_tmp <- if (d == 1) {ecdf(z)(z)} else {mult.ecdf(z)}
   FDR <- p0 * F0 / F_tmp
   
-  if (alternative == "greater" | alternative == "g") {
-    thre_FDR <- max(z[FDR > 1])
-    FDR[z < thre_FDR] = 1
+  if (d == 1){
+    if (alternative == "greater" | alternative == "g") {
+      thre_FDR <- max(z[FDR > 1])
+      FDR[z < thre_FDR] = 1
     } else{
       thre_FDR <- min(z[FDR > 1])
       FDR[z > thre_FDR] = 1
+    }
   }
 
   # return results
@@ -280,8 +282,8 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
                   f = f/raw_sd, f1 = f1/raw_sd, F = F_tmp, localFDR = gam, 
                   FDR = FDR, iter = k)
     } else {
-      res <- list(p0 = p0, mu0 = mu0%*%raw_cov + raw_mean, sig0 = sig0%*%raw_cov,
-                  f = f, f1 = f1, localFDR = gam, iter = k)
+      res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
+                  f = f, f1 = f1, F = F_tmp, localFDR = gam, FDR = FDR, iter = k)
     }
   }
   return(res)
