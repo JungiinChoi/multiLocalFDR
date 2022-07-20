@@ -126,7 +126,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   }
 
   # ******************* MAIN FUNCTION *******************************
-  thre_z = 1-1e-5
+  thre_z = 0.99
   z <- as.matrix(z)
   n <- dim(z)[1]
   d <- dim(z)[2]
