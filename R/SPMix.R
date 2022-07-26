@@ -40,7 +40,7 @@
 #' @export
 
 SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, 
-                  Uthre_gam = 0.99, Lthre_gam = 0.01 )
+                  thre_z = 1-1e-5, Uthre_gam = 0.99, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
 
@@ -126,7 +126,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   }
 
   # ******************* MAIN FUNCTION *******************************
-  thre_z = 0.99
+  
   z <- as.matrix(z)
   n <- dim(z)[1]
   d <- dim(z)[2]
@@ -259,16 +259,10 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
 
   F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
   F_tmp <- if (d == 1) {ecdf(z)(z)} else {mult.ecdf(z)}
-  FDR <- p0 * F0 / F_tmp
-  
-  if (d == 1){
-    if (alternative == "greater" | alternative == "g") {
-      thre_FDR <- max(z[FDR > 1])
-      FDR[z < thre_FDR] = 1
-    } else{
-      thre_FDR <- min(z[FDR > 1])
-      FDR[z > thre_FDR] = 1
-    }
+  if (alternative == "greater" | alternative == "g"){
+    FDR <- p0 * (1-F0) / (1-F_tmp)
+  } else{
+    FDR <- p0 * F0 / F_tmp
   }
 
   # return results
