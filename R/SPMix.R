@@ -22,8 +22,8 @@
 #' then optimization stops. (default: 5e-6)
 #' @param p_value If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
 #' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
+#' @param min_iter Minimum number of iterations in the EM algorithm. (default: 3)
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
-#' @param mono If TRUE, localFDR is in ascending order of z-values. (default: TRUE)
 #' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 #'
@@ -39,7 +39,7 @@
 #'
 #' @export
 
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, 
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_iter = 3, max_iter = 30, 
                   thre_z = 1-1e-5, Uthre_gam = 0.99, Lthre_gam = 0.01 )
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
@@ -181,7 +181,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 3) | ((k < max_iter) & (!converged)) ) {
+    while ( (k < min_iter) | ((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
@@ -218,14 +218,14 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_i
   } else {
     ## EM-step
     k <- 0; converged <- 0
-    while ( (k < 4)|((k < max_iter) & (!converged)) ) {
+    while ( (k < min_iter)|((k < max_iter) & (!converged)) ) {
       k <- k + 1
 
       ## E-step
       new_f <- (p0 * f0 + (1 - p0) * f1)
       new_gam <- p0 * f0 / new_f
 
-      if (mono) new_gam <- MonotoneFDR(z, new_gam)
+      new_gam <- MonotoneFDR(z, new_gam)
 
       ## M-step
       sum_gam <- sum(new_gam)
