@@ -125,27 +125,17 @@ plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
 
     sub_3d <- if (testing) {sub_testing} else {sub_density}
 
-    if (type == "contour" | type == "c") {
-      # contour
-      ggplot(df, aes(x = z[,1], y = z[,2])) +
-        geom_point(aes(color = legend_3d)) +
-        scale_color_manual(values = c("#999999", "#E69F00"), name="") +
-        geom_density_2d(colour = "black", alpha= 0.7) +
-        theme(plot.title = element_text(margin = margin(b = -10))) +
-        labs(title = sub_3d, x=xlab, y = ylab) +
-        theme_classic()
-    } else {
-      # 3D scatterplot
-      colors <- c("#999999", "#E69F00")
-      colors <- colors[as.numeric(which_z)+1]
-      scatterplot<- scatterplot3d(z[,1],z[,2],f, pch = 16, color=colors,
-                                  xlab = xlab, ylab = ylab, zlab = "f", main = sub_3d)
-      legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
-      legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
-      legend_3d <- if (testing) {legend_testing} else {legend_density}
-      legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
-             legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
-    }
+    # 3D scatterplot
+    colors <- c("#999999", "#E69F00")
+    colors <- colors[as.numeric(which_z)+1]
+    scatterplot<- scatterplot3d(z[,1],z[,2],f, pch = 16, color=colors,
+                                xlab = xlab, ylab = ylab, zlab = "f", main = sub_3d)
+    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+    legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
+    legend_3d <- if (testing) {legend_testing} else {legend_density}
+    legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
+           legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
+  
   } else if (d == 3) {
     colors <- c("#999999", "#E69F00")
     colors <- colors[as.numeric(which_z)+1]
