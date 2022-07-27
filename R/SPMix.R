@@ -8,34 +8,38 @@
 #' @title Semiparametric Mixture Density Estimation for given z-values
 #'
 #' @description \code{SPMix} returns localFDR estimates and semiparametric
-#' mixture density estimates for given multi-dimensional lists of z-values, which
-#' are the probit-transformed p-values.
+#' mixture density estimates for given multi-dimensional lists of z-values, p-values or raw data. 
 #' For the hypothesis testing \code{SPMix} uses a two-component semiparametric
 #' mixture model to estimate the localFDR from the z-values. The two pillars of the
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
 #'
-#' @param z Matrix which column indicates z-values, probit-transformed p-values.
+#' @param z Matrix which each row indicates each data point (z-values, p-values, or raw data).
 #' @param tol Stopping criteria for the EM algorithm. If maximum absolute difference
 #' of current and previous gamma value is smaller than tol,
 #' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 #' then optimization stops. (default: 5e-6)
-#' @param p_value If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
-#' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
+#' @param p_value If TRUE, input data indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
+#' @param alternative A character string specifying the alternative hypothesis, must be one of "greater" (default) or "less". You can also use the initial letter "g" or "l". (default: "greater")
 #' @param min_iter Minimum number of iterations in the EM algorithm. (default: 3)
 #' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
-#' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
-#' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
+#' @param thre_z The upper threshold of gamma whose z-values are used in log-concave estimates in the M-step of the EM-type algorithm. (default: 1-1e-5)
+#' @param Uthre_gam The upper threshold of gamma which are used to compute stopping criteria for the EM algorithm. (default: 0.99)
+#' @param Lthre_gam The lower threshold of gamma which are used to compute stopping criteria for the EM algorithm. (default: 0.01)
 #'
+#' @return Estimates of semiparametric mixture model for given data.
 #'
-#' @return Estimates of semiparametric mixture model for f for given z-values.
-#'
+#'   \item{z}{Matrix which each row indicates each data point}
 #'   \item{p0}{Prior probability for null distribution}
-#'   \item{mu0 sig0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
-#'   \item{f}{Probability estimates of semiparametric mixture model for each z-value point.}
-#'   \item{f1}{Probability estimates of alternative distribution of mixture model for each z-value point.}
-#'   \item{localFDR}{localFDR estimates for given z-values}
+#'   \item{mu0 sig0}{Parameter estimates of Gaussian (null) distribution, N(mu0, sig0^2)}
+#'   \item{f}{Probability estimates of semiparametric mixture model for given data.}
+#'   \item{f1}{Probability estimates of log-concave (alternative) distribution of mixture model for given data.}
+#'   \item{F}{Cumulative density estimates of mixture model for given data.}
+#'   \item{localFDR}{localFDR estimates for given z-data.}
+#'   \item{FDR}{FDR estimates for given data.}
 #'   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
+#'   \item{dim}{Dimension of the given data}
+#'   \item{alternative}{A character string specifying the orientation of alternative distribution.}
 #'
 #' @export
 
@@ -268,17 +272,18 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_i
   # return results
 
   if (p_value) {
-    res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
-                f = f, f1 = f1, F = F_tmp, localFDR = gam, FDR = FDR, iter = k)
+    res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1, F = F_tmp, 
+                localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
   } else {
     if (d == 1){
-      res <- list(p0 = p0, mu0 = mu0*raw_sd + raw_mean, sig0 = sig0*raw_sd,
-                  f = f/raw_sd, f1 = f1/raw_sd, F = F_tmp, localFDR = gam, 
-                  FDR = FDR, iter = k)
+      res <- list(z = z*raw_sd + raw_mean, p0 = p0, mu0 = mu0*raw_sd + raw_mean, 
+                  sig0 = sig0*raw_sd, f = f/raw_sd, f1 = f1/raw_sd, F = F_tmp, 
+                  localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
     } else {
-      res <- list(p0 = p0, mu0 = mu0, sig0 = sig0,
-                  f = f, f1 = f1, F = F_tmp, localFDR = gam, FDR = FDR, iter = k)
+      res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1, F = F_tmp, 
+                  localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
     }
   }
+  
   return(res)
 }

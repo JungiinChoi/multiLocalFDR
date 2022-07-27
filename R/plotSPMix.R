@@ -13,45 +13,35 @@
 #' proposed approach are Efron's empirical null principle and log-concave density
 #' estimation for the alternative distribution.
 #'
-#' @param z Matrix which column indicates given data point, it can be raw-data, z-values or p-values.
-#' @param p0 Prior probability for null distribution
-#' @param mu0 Parameter estimates of normal null distribution, N(mu0, sig0^2)
-#' @param sig0 Parameter estimates of normal null distribution, N(mu0, sig0^2)
-#' @param f Probability estimates of mixture model for each given data point.
-#' @param f1 Probability estimates of alternative distribution of mixture model for each given data point.
-#' @param localFDR localFDR estimates for given z-values
-#' @param p_value If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)
-#' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
-#' @param thre_localFDR Threshold of localFDR for null and alternative distribution (default: 0.2)
-#' @param testing TRUE if it's for hypothesis testing, FALSEif it's for density estimation
+#'
+#' @param x object of class "SPMix"
+#' @param thre_localFDR Threshold of localFDR determining significant data points. (default: 0.2)
+#' @param testing If TRUE, it's for hypothesis testing. If FALSE, it's for density estimation (default: TRUE)
 #' @param xlab Label for x-axis on histogram or 3D scatter plot (default: "x")
 #' @param ylab Label for y-axis on 3D scatter plot (default: "y")
 #' @param zlab Label for z-axis on 3D scatter plot (default: "z")
-#' @param type Type of 2-dimensional density plot (3d/contour plot)(default: "3d")
-#' @param coord_legend Coordinate of a legend for 3d scatter plot when given data is 2D. (default: c(8, -5, 0.2))
+#' @param coord_legend Coordinate of a legend for a 3d scatter plot when given data is 2D or 3D. (default: c(8, -5, 0.2))
 #'
 #' @return Plot estimated semiparametric mixture density and return threshold value.
 #'
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
-                      alternative = "greater", thre_localFDR = 0.2, testing = TRUE,
-                      xlab = "x", ylab = "y", zlab = "z", type = "3d", coord_legend = c(8, -5, 0.2))
+plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
+                      xlab = "x", ylab = "y", zlab = "z", coord_legend = c(8, -5, 0.2))
 {
+  z <- x$z
+  p0 <- x$p0
+  mu0 <- x$mu0
+  sig0 <- x$sig0
+  f <- x$f
+  f1 <- x$f1
+  localFDR <- x$localFDR
+  d <- x$dim
+  alternative <- x$alternative
+  
   which_z <- (localFDR <= thre_localFDR)
-
-  z <- as.matrix(z)
-  n <- dim(z)[1]
-  d <- dim(z)[2]
-
-  if (p_value) {
-    if (alternative == "greater" | alternative == "g") {
-      z = qnorm(1-z)
-    } else {
-      z = qnorm(z)
-    }
-  }
+  
 
   if (d == 1){
     z = as.numeric(z)
