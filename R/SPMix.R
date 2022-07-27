@@ -35,7 +35,7 @@
 #'   \item{f}{Probability estimates of semiparametric mixture model for given data.}
 #'   \item{f1}{Probability estimates of log-concave (alternative) distribution of mixture model for given data.}
 #'   \item{F}{Cumulative density estimates of mixture model for given data.}
-#'   \item{localFDR}{localFDR estimates for given z-data.}
+#'   \item{localFDR}{localFDR estimates for given data.}
 #'   \item{FDR}{FDR estimates for given data.}
 #'   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
 #'   \item{dim}{Dimension of the given data}
@@ -261,8 +261,8 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_i
   
   # compute FDR
 
-  F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {pmvnorm(z, mu0, sig0)}
-  F_tmp <- if (d == 1) {ecdf(z)(z)} else {mult.ecdf(z)}
+  F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {rep(0.5,n)}
+  F_tmp <- if (d == 1) {ecdf(z)(z)} else {rep(0.5,n)}
   if (alternative == "greater" | alternative == "g"){
     FDR <- p0 * (1-F0) / (1-F_tmp)
   } else{
