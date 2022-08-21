@@ -258,30 +258,20 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_i
       gam <- new_gam
     }
   }
-  
-  # compute FDR
-
-  F0 <- if (d == 1) {pnorm(z, mu0, sig0)} else {rep(0.5,n)}
-  F_tmp <- if (d == 1) {ecdf(z)(z)} else {rep(0.5,n)}
-  if (alternative == "greater" | alternative == "g"){
-    FDR <- p0 * (1-F0) / (1-F_tmp)
-  } else{
-    FDR <- p0 * F0 / F_tmp
-  }
 
   # return results
 
   if (p_value) {
-    res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1, F = F_tmp, 
-                localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
+    res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1,  
+                localFDR = gam, iter = k, dim = d, alternative = alternative)
   } else {
     if (d == 1){
       res <- list(z = z*raw_sd + raw_mean, p0 = p0, mu0 = mu0*raw_sd + raw_mean, 
-                  sig0 = sig0*raw_sd, f = f/raw_sd, f1 = f1/raw_sd, F = F_tmp, 
-                  localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
+                  sig0 = sig0*raw_sd, f = f/raw_sd, f1 = f1/raw_sd, 
+                  localFDR = gam, iter = k, dim = d, alternative = alternative)
     } else {
-      res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1, F = F_tmp, 
-                  localFDR = gam, FDR = FDR, iter = k, dim = d, alternative = alternative)
+      res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1, 
+                  localFDR = gam, iter = k, dim = d, alternative = alternative)
     }
   }
   
