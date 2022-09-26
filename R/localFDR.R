@@ -2,11 +2,11 @@
 #' @importFrom mclust dmvnorm
 #' @importFrom logcondens activeSetLogCon
 #'
-#' @title FDR estimation for given z-values / p-values
+#' @title localFDR estimation for given data
 #'
-#' @description \code{localFDR} returns localFDR estimates for given multi-dimensional lists of z-values / p-values.
+#' @description \code{localFDR} returns localFDR estimates for given multi-dimensional lists of raw data, z-values, or p-values.
 #' \code{localFDR} imports \code{SPMix} for a two-component semiparametric
-#' mixture model to estimate the localFDR from the z-values / p-values.
+#' mixture model to estimate the localFDR.
 #'
 #' @param z Matrix which column indicates z-values, probit-transformed p-values.
 #' @param tol Stopping criteria for the EM algorithm. If maximum absolute difference

@@ -5,8 +5,9 @@
 #' @importFrom graphics legend
 #' @import stats
 #' 
-#' @title Semiparametric Mixture Density Estimation for given z-values
-#'
+#' @title Parameter estimates of null(normal) distribution and fitted values for 
+#' both alternative(nonparametric) and mixture density. 
+#' 
 #' @description \code{SPMix} returns localFDR estimates and semiparametric
 #' mixture density estimates for given multi-dimensional lists of z-values, p-values or raw data. 
 #' For the hypothesis testing \code{SPMix} uses a two-component semiparametric
