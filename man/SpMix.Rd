@@ -9,50 +9,53 @@ SPMix(
   tol = 5e-06,
   p_value = FALSE,
   alternative = "greater",
+  min_iter = 3,
   max_iter = 30,
-  mono = TRUE,
-  thre_z = 0.9,
-  Uthre_gam = 0.9,
+  thre_z = 1 - 1e-05,
+  Uthre_gam = 0.99,
   Lthre_gam = 0.01
 )
 }
 \arguments{
-\item{z}{Matrix which column indicates z-values, probit-transformed p-values.}
+\item{z}{Matrix which each row indicates each data point (z-values, p-values, or raw data).}
 
 \item{tol}{Stopping criteria for the EM algorithm. If maximum absolute difference
 of current and previous gamma value is smaller than tol,
 i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
 then optimization stops. (default: 5e-6)}
 
-\item{p_value}{If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)}
+\item{p_value}{If TRUE, input data indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)}
 
-\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
+\item{alternative}{A character string specifying the alternative hypothesis, must be one of "greater" (default) or "less". You can also use the initial letter "g" or "l". (default: "greater")}
+
+\item{min_iter}{Minimum number of iterations in the EM algorithm. (default: 3)}
 
 \item{max_iter}{Maximum number of iterations in the EM algorithm. (default: 30)}
 
-\item{mono}{If TRUE, localFDR is in ascending order of z-values. (default: TRUE)}
+\item{thre_z}{The upper threshold of gamma whose z-values are used in log-concave estimates in the M-step of the EM-type algorithm. (default: 1-1e-5)}
 
-\item{thre_z}{Threshold value which only z-values smaller than thre.z
-are used to compute the log-concave estimates f_1 in M-step.}
+\item{Uthre_gam}{The upper threshold of gamma which are used to compute stopping criteria for the EM algorithm. (default: 0.99)}
 
-\item{Uthre_gam}{Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
-
-\item{Lthre_gam}{Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
+\item{Lthre_gam}{The lower threshold of gamma which are used to compute stopping criteria for the EM algorithm. (default: 0.01)}
 }
 \value{
-Estimates of semiparametric mixture model for f for given z-values.
+Estimates of semiparametric mixture model for given data.
 
+  \item{z}{Matrix which each row indicates each data point}
   \item{p0}{Prior probability for null distribution}
-  \item{mu0 sig0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
-  \item{f}{Probability estimates of semiparametric mixture model for each z-value point.}
-  \item{f1}{Probability estimates of alternative distribution of mixture model for each z-value point.}
-  \item{localFDR}{localFDR estimates for given z-values}
+  \item{mu0 sig0}{Parameter estimates of Gaussian (null) distribution, N(mu0, sig0^2)}
+  \item{f}{Probability estimates of semiparametric mixture model for given data.}
+  \item{f1}{Probability estimates of log-concave (alternative) distribution of mixture model for given data.}
+  \item{F}{Cumulative density estimates of mixture model for given data.}
+  \item{localFDR}{localFDR estimates for given data.}
+  \item{FDR}{FDR estimates for given data.}
   \item{iter}{Number of iterations of EM algorithm to compute localFDR.}
+  \item{dim}{Dimension of the given data}
+  \item{alternative}{A character string specifying the orientation of alternative distribution.}
 }
 \description{
 \code{SPMix} returns localFDR estimates and semiparametric
-mixture density estimates for given multi-dimensional lists of z-values, which
-are the probit-transformed p-values.
+mixture density estimates for given multi-dimensional lists of z-values, p-values or raw data. 
 For the hypothesis testing \code{SPMix} uses a two-component semiparametric
 mixture model to estimate the localFDR from the z-values. The two pillars of the
 proposed approach are Efron's empirical null principle and log-concave density

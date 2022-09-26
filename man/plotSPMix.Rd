@@ -5,53 +5,29 @@
 \title{plotMixture estimation for given z-values}
 \usage{
 plotSPMix(
-  z,
-  p0,
-  mu0,
-  sig0,
-  f,
-  f1,
-  localFDR,
-  p_value = FALSE,
-  alternative = "greater",
+  x,
   thre_localFDR = 0.2,
   testing = TRUE,
   xlab = "x",
   ylab = "y",
-  type = "3d",
+  zlab = "z",
   coord_legend = c(8, -5, 0.2)
 )
 }
 \arguments{
-\item{z}{Matrix which column indicates given data point, it can be raw-data, z-values or p-values.}
+\item{x}{object of class "SPMix"}
 
-\item{p0}{Prior probability for null distribution}
+\item{thre_localFDR}{Threshold of localFDR determining significant data points. (default: 0.2)}
 
-\item{mu0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
-
-\item{sig0}{Parameter estimates of normal null distribution, N(mu0, sig0^2)}
-
-\item{f}{Probability estimates of mixture model for each given data point.}
-
-\item{f1}{Probability estimates of alternative distribution of mixture model for each given data point.}
-
-\item{localFDR}{localFDR estimates for given z-values}
-
-\item{p_value}{If TRUE, the column of input indicates p-values, if FALSE, it indicates z-values or raw data. (default: FALSE)}
-
-\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
-
-\item{thre_localFDR}{Threshold of localFDR for null and alternative distribution (default: 0.2)}
-
-\item{testing}{TRUE if it's for hypothesis testing, FALSEif it's for density estimation}
+\item{testing}{If TRUE, it's for hypothesis testing. If FALSE, it's for density estimation (default: TRUE)}
 
 \item{xlab}{Label for x-axis on histogram or 3D scatter plot (default: "x")}
 
-\item{ylab}{Label for y-axis on 3D scatter plot (default: "x")}
+\item{ylab}{Label for y-axis on 3D scatter plot (default: "y")}
 
-\item{type}{Type of 2-dimensional density plot (3d/contour plot)(default: "3d")}
+\item{zlab}{Label for z-axis on 3D scatter plot (default: "z")}
 
-\item{coord_legend}{Coordinate of a legend for 3d scatter plot when given data is 2D. (default: c(8, -5, 0.2))}
+\item{coord_legend}{Coordinate of a legend for a 3d scatter plot when given data is 2D or 3D. (default: c(8, -5, 0.2))}
 }
 \value{
 Plot estimated semiparametric mixture density and return threshold value.

@@ -23,22 +23,30 @@ library(multiLocalFDR)
 ## SPMix()
 
 ```{r eval=FALSE}
-SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30, mono = TRUE, thre_z = 0.9, Uthre_gam = 0.9, Lthre_gam = 0.01 )
+SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_iter = 3, 
+                  max_iter = 30, thre_z = 1-1e-5, Uthre_gam = 0.99, Lthre_gam = 0.01 )
 ```
 
-* z: Given matrix which column indicates raw data. 
-* tol: tolerance value for determining convergence of EM-type algorithm
-* p-value: if TRUE, than we assume that the input is p-value $\in [0,1]$.
-* alternative: if 'greater', than it assumes alternative distribution is greater than (on the right side of) null density. This applies for only univariate data.
+* z: Matrix which each row indicates each data point. 
+* tol: Stopping criteria for the EM-type algorithm.
+* p-value: If TRUE, input data indicates p-values, if FALSE, it indicates z-values or raw data.
+* alternative: A character string specifying the alternative hypothesis, must be one of "greater" (default) or "less".
+* min_iter, max_iter: Minimum.maximum number of iterations in the EM algorithm. 
+* thre_z: The upper threshold of gamma whose z-values are used in log-concave estimates in the M-step of the EM-type algorithm.
+* Uthre_gam, Lthre_gam: The upper/lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
 
 ## plotSPMix()
 
 ```{r eval=FALSE}
-plotSPMix <- function(z, p0, mu0, sig0, f, f1, localFDR, p_value = FALSE,
-                      alternative = "greater", thre_localFDR = 0.2, testing = TRUE,
-                      xlab = "x", ylab = "y", coord_legend = c(8, -5, 0.2))
+plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
+                      xlab = "x", ylab = "y", zlab = "z", coord_legend = c(8, -5, 0.2))
 ```
 
+* x: object of class "SPMix".
+* thre_localFDR: Threshold of localFDR determining significant data points.
+* testing: If TRUE, it's for hypothesis testing. If FALSE, it's for density estimation.
+* xlab, ylab, zlab: Label for x-, y-, and z-axis on histogram or 3D scatter plot.
+* coord_legend: Coordinate of a legend for a 3d scatter plot when given data is 2D or 3D.
 * testing: If TRUE, the visualization is for hypothesis testing, otherwise, density estimation.
 
 # Simulations
@@ -65,16 +73,18 @@ Let's consider randomly generated 1000 data from the density below.
 $$f = 0.8 \cdot N(0,1) + 0.2 \cdot N(3.5, 0.5^2)$$
 
 ```{r}
-n=10000
-p0=0.8
+set.seed(100)
+
+n <- 10000
+p0 <- 0.8
 n0 <- rbinom(1, n, p0)
 n1 <- n - n0
 z0 <- rnorm(n0)
-z1 <- rnorm(n1, mean = 3.5, sd = 0.5)
+z1 <- rnorm(n1, mean = 3, sd = 0.5)
 z_NN1d <- c(z0, z1)
 
-NN1d <- SPMix(z_NN1d, tol = 1e-10, thre_z = 0.99, Uthre_gam = 0.9)
-summary(NN1d)
+NN1d <- SPMix(z_NN1d, min_iter = 10)
+str(NN1d)
 ```
 
 __SPMix()__ returns null probability($p0$), null parameters($\mu_0, \sig_0$), 
@@ -82,7 +92,7 @@ estimated density and nonnull density($f, f_1$) and estimated local-FDR value.
 
 ```{r}
 # Hypothesis testing 
-plotSPMix(z_NN1d, NN1d$p0, NN1d$mu0, NN1d$sig0, NN1d$f, NN1d$f1, NN1d$localFDR)
+plotSPMix(NN1d)
 ```
 
 __plotSPMix()__ can be used for both hypothesis testing and density estimation. 
@@ -91,8 +101,7 @@ is marked with dashed line.
 
 ```{r}
 # Density Estimation
-plotSPMix(z_NN1d, NN1d$p0, NN1d$mu0, NN1d$sig0, NN1d$f, NN1d$f1, NN1d$localFDR,
-          testing = FALSE)
+plotSPMix(NN1d, testing = FALSE)
 ```
 
 If testing is FALSE, it gives density estimation and classifies two parts(normal/nonparametric) by local-FDR value (local-FDR $> 0.5$?). 
@@ -107,16 +116,15 @@ $$f = 0.8 \cdot N(0,1) + 0.2 \cdot Gamma(shape = 12, rate = 4)$$
 z1_gamma <- rgamma(n1, shape = 12, rate = 4)
 z_NG1d <- c(z0, z1_gamma)
 
-NG1d <- SPMix(z_NG1d, tol = 1e-10, thre_z = 0.99)
+NG1d <- SPMix(z_NG1d, min_iter = 10)
 ```
 
 ```{r}
 # Hypothesis testing 
-plotSPMix(z_NG1d, NG1d$p0, NG1d$mu0, NG1d$sig0, NG1d$f, NG1d$f1, NG1d$localFDR)
+plotSPMix(NG1d)
 
 # Density Estimation
-plotSPMix(z_NG1d, NG1d$p0, NG1d$mu0, NG1d$sig0, NG1d$f, NG1d$f1, NG1d$localFDR,
-          testing = FALSE)
+plotSPMix(NG1d, testing = FALSE)
 ```
 
 ## 2-dimensional data
@@ -142,10 +150,9 @@ ggplot(z_NN2d, aes(x = z_NN2d[,1], y = z_NN2d[,2])) +
 
 
 ```{r}
-NN2d <- SPMix(z_NN2d, tol = 1e-10)
+NN2d <- SPMix(z_NN2d)
 
-plotSPMix(z_NN2d, NN2d$p0, NN2d$mu0, NN2d$sig0, NN2d$f, NN2d$f1, NN2d$localFDR, 
-          xlab = "x", ylab = "y")
+plotSPMix(NN2d)
 ```
 
 __plotSPMix()__ also provides visualization of 2-dimensional data.
@@ -167,10 +174,9 @@ ggplot(z_NG, aes(x = z_NG[,1], y = z_NG[,2])) +
 ```
 
 ```{r}
-NG <- SPMix(z_NG, tol = 1e-10)
+NG2d <- SPMix(z_NG2d)
 
-plotSPMix(z_NG, NG$p0, NG$mu0, NG$sig0, NG$f, NG$f1, NG$localFDR, 
-          xlab = "x", ylab = "y")
+plotSPMix(NG2d)
 ```
 
 ## 3-dimensional data
@@ -190,18 +196,11 @@ z0_NN3d <- rmvnorm(n0, sigma = Sigma0)
 z1_NN3d <- qnorm(V, mean = 3.5, sd = .5)
 z_NN3d <- rbind(z0_NN3d, z1_NN3d)
 
-NN3d <- SPMix(z_NN3d, 1e-10)
+NN3d <- SPMix(z_NN3d)
 ```
 
 ```{r}
-colors <- c("#999999", "#E69F00")
-colors <- colors[as.numeric(NN3d$localFDR <= 0.1)+1]
-scatterplot_NN<- scatterplot3d(z_NN3d, pch = 16, color=colors,
-                            xlab = "x", ylab = "y", zlab = "z")
-legend_pathway <- factor((NN3d$localFDR <= 0.1), levels = c(FALSE, TRUE), 
-                         labels = c("Nonsignificant", "Significant"))
-legend(scatterplot_NN$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
-       col = c("#999999", "#E69F00"), pch = 16)
+plotSPMix(NN3d, thre_localFDR = 0.1)
 ```
 
 Orange dots are given data with lower local-FDR (localFDR $< 0.1$).
@@ -214,18 +213,11 @@ z0_NG3d <- rmvnorm(n0, sigma = Sigma0)
 z1_NG3d <- qgamma(V_NG, shape = 12, rate = 4)
 z_NG3d <- rbind(z0_NG3d, z1_NG3d)
 
-NG3d <- SPMix(z_NG3d, 1e-10)
+NG3d <- SPMix(z_NG3d)
 ```
 
 ```{r}
-colors <- c("#999999", "#E69F00")
-colors <- colors[as.numeric(NG3d$localFDR <= 0.1)+1]
-scatterplot_NG<- scatterplot3d(z_NG3d, pch = 16, color=colors,
-                            xlab = "x", ylab = "y", zlab = "z")
-legend_pathway <- factor((NG3d$localFDR <= 0.2), levels = c(FALSE, TRUE), 
-                         labels = c("Nonsignificant", "Significant"))
-legend(scatterplot_NG$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
-       col = c("#999999", "#E69F00"), pch = 16)
+plotSPMix(NG3d, thre_localFDR = 0.1)
 ```
 
 # Applications
@@ -242,7 +234,7 @@ head(galaxy)
 
 ```{r}
 z_galaxy <- galaxy$velocity
-params <- SPMix(z_galaxy, alternative = "less")
+x_galaxy <- SPMix(z_galaxy, alternative = "less")
 ```
 
 * z_galaxy: input data does not have to be z-values or p-values.
@@ -250,9 +242,7 @@ params <- SPMix(z_galaxy, alternative = "less")
 follow Normal density. 
 
 ```{r}
-plotSPMix(z_galaxy, params$p0, params$mu0, params$sig0, params$f, params$f1, 
-          params$localFDR, alternative = "greater", testing = FALSE,
-                      xlab = "velocity(km/s)")
+plotSPMix(x_galaxy, testing = FALSE, xlab = "velocity(km/s)")
 ```
 
 ## Pathways (Multivariate)
@@ -267,25 +257,22 @@ head(pathways)
 ### Univariate analysis
 
 ```{r}
-## SpMix for each pathway
-params_L <- SPMix(pathways[,2], p_value = TRUE, tol = 1e-10)
-params_O <- SPMix(pathways[,3], p_value = TRUE, tol = 1e-10)
-params_S <- SPMix(pathways[,4], p_value = TRUE, tol = 1e-10)
+## SPMix for each pathway
+x_L <- SPMix(pathways[,2], p_value = TRUE)
+x_O <- SPMix(pathways[,3], p_value = TRUE)
+x_S <- SPMix(pathways[,4], p_value = TRUE)
 
 ## Plot results for each pathway
-plotSPMix(pathways[,2], params_L$p0, params_L$mu0, params_L$sig0, params_L$f, 
-          params_L$f1, params_L$localFDR, p_value = TRUE, xlab = "Peripheral Leukocytes")
-plotSPMix(pathways[,3], params_O$p0, params_O$mu0, params_O$sig0, params_O$f, 
-          params_O$f1, params_O$localFDR, p_value = TRUE, xlab = "Orbital Tissue")
-plotSPMix(pathways[,4], params_S$p0, params_S$mu0, params_S$sig0, params_S$f, 
-          params_S$f1, params_S$localFDR, p_value = TRUE, xlab = "Sinus Brushings")
+plotSPMix(x_L, xlab = "Peripheral Leukocytes")
+plotSPMix(x_O, xlab = "Orbital Tissue")
+plotSPMix(x_S, xlab = "Sinus Brushings")
 ```
 
 ### Multivariate Analysis
 
 ```{r}
 ## SpMix for 3-dimensional data
-params_LOS <- SPMix(pathways[,2:4], p_value = TRUE, tol = 1e-10)
+x_LOS <- SPMix(pathways[,2:4], p_value = TRUE)
 
 ## Pathways which md-fdr <= 0.01
 head(pathways[params_LOS$localFDR <= 0.01,]$Gene.Set)
@@ -301,16 +288,8 @@ head(pathways_df)
 ### 3d scatter plot 
 
 ```{r}
-colors <- c("#999999", "#E69F00")
-colors <- colors[as.numeric(pathways_df$sgnf)+1]
-scatterplot<- scatterplot3d(qnorm(1-as.matrix(pathways_df[,2:4])), pch = 16, color=colors,
-              xlab = "Peripheral Leukocytes",
-              ylab = "Orbital Tissue",
-              zlab = "Sinus Brushings")
-
-legend_pathway <- factor(pathways_df$sgnf, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
-legend(scatterplot$xyz.convert(6, -5, 0), legend = levels(legend_pathway),
-       col = c("#999999", "#E69F00"), pch = 16)
+plotSPMix(x_LOS, thre_localFDR = 0.01, xlab = "Peripheral Leukocytes",
+          ylab = "Orbital Tissue", zlab = "Sinus Brushings", coord_legend = c(6, -5, 0))
 ```
 
 Orange dots are pathways with md-fdr $< 0.01$. 

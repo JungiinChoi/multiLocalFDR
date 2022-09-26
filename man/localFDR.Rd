@@ -11,8 +11,7 @@ localFDR(
   alternative = "greater",
   max_iter = 30,
   mono = TRUE,
-  thre_z = 0.9,
-  Uthre_gam = 0.9,
+  Uthre_gam = 0.99,
   Lthre_gam = 0.01
 )
 }
@@ -31,9 +30,6 @@ then optimization stops. (default: 5e-6)}
 \item{max_iter}{Maximum number of iterations in the EM algorithm. (default: 30)}
 
 \item{mono}{If TRUE, FDR is in ascending order of z-values. (default: TRUE)}
-
-\item{thre_z}{Threshold value which only z-values smaller than thre.z
-are used to compute the log-concave estimates f_1 in M-step.}
 
 \item{Uthre_gam}{Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
 
