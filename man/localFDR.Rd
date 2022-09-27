@@ -2,7 +2,7 @@
 % Please edit documentation in R/localFDR.R
 \name{localFDR}
 \alias{localFDR}
-\title{FDR estimation for given z-values / p-values}
+\title{localFDR estimation for given data}
 \usage{
 localFDR(
   z,
@@ -40,7 +40,7 @@ Estimates of localFDR for given z-values / p-values.
   \item{localFDR}{local FDR estimates for given z-values / p-values}
 }
 \description{
-\code{localFDR} returns localFDR estimates for given multi-dimensional lists of z-values / p-values.
+\code{localFDR} returns localFDR estimates for given multi-dimensional lists of raw data, z-values, or p-values.
 \code{localFDR} imports \code{SPMix} for a two-component semiparametric
-mixture model to estimate the localFDR from the z-values / p-values.
+mixture model to estimate the localFDR.
 }

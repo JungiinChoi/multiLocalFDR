@@ -12,7 +12,7 @@ Author: Fabian Rathke [aut, cre],
 	Dongseok Choi [aut],
 	Woncheol Jang [aut]
 Maintainer: Jungin Choi <jchoi177@jhu.edu>
-Imports: mclust, fmlogcondens, logcondens, ggplot2, tibble, scatterplot3d
+Imports: mclust, fmlogcondens, logcondens, ggplot2, tibble, scatterplot3d, LogConcDEAD, mvtnorm
 Remotes: JungiinChoi/fmlogcondens
 Description: Estimation of one- or multi-dimensional local false discovery rate (FDR) and its visualization. For given raw data/z-values/p-values, it computes estimated density and local-FDR using our semiparametric mixture method. Moreover, it provides visualization of fitted density for one- or two-dimensional data. The two pillars of the proposed approach are Efron's empirical null principle and log-concave density estimation for the alternative distribution. Our method outperforms other existing methods, in particular when the proportion of null is not that high. It is robust against the misspecification of alternative distribution. As a reference see Seok-Oh Jeong, Dongseok Choi and Woncheol Jang (2020), <doi.org/10.1214/20-AOAS1341>.
 Suggests: knitr, rmarkdown

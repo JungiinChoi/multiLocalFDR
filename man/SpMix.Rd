@@ -2,7 +2,8 @@
 % Please edit documentation in R/SPMix.R
 \name{SPMix}
 \alias{SPMix}
-\title{Semiparametric Mixture Density Estimation for given z-values}
+\title{Parameter estimates of null(normal) distribution and fitted values for 
+both alternative(nonparametric) and mixture density.}
 \usage{
 SPMix(
   z,

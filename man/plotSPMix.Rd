@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotSPMix.R
 \name{plotSPMix}
 \alias{plotSPMix}
-\title{plotMixture estimation for given z-values}
+\title{draws a histogram(univariate) or a scatterplot(2D or 3D) for fitted SPMix object.}
 \usage{
 plotSPMix(
   x,
@@ -35,11 +35,8 @@ Plot estimated semiparametric mixture density and return threshold value.
   \item{thre}{Threshold z-value for null and alternative distribution}
 }
 \description{
-\code{plotSPMix} returns plotSPMix estimates and semiparametric
-mixture density estimates for given multi-dimensional lists of z-values, which
-are the probit-transformed p-values.
-For the hypothesis testing \code{plotSPMix} uses a two-component semiparametric
-mixture model to estimate the plotSPMix from the p-values. The two pillars of the
-proposed approach are Efron's empirical null principle and log-concave density
-estimation for the alternative distribution.
+\code{plotSPMix} draws a histogram(univariate) or a scatterplot(2D or 3D) 
+for fitted SPMix object which can be customized with the ggplot2 package.
+\code{plotSPMix()} can be used for both hypothesis testing and density estimation. 
+If testing is TRUE (default), it gives fitted density for both null and alternative distribution.
 }
