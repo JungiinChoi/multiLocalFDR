@@ -42,7 +42,7 @@ If you already have the [original fmlogcondens](https://github.com/FabianRathke/
 devtools::install_github("JungiinChoi/multiLocalFDR")
 
 #> Warning message:
-#> package 'multiLocalFDR' overwrites 'fmlogcondens' to modified version.
+#> package 'multiLocalFDR' overwrites 'fmlogcondens' to modified version in https://github.com/JungiinChoi/fmlogcondens.
 ```
 
 ## Usage
