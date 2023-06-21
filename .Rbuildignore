@@ -1,3 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^/Users/user/Documents/GitHub/multiLocalFDR/cran-comments\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
