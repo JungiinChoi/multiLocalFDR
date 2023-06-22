@@ -1,4 +1,3 @@
-#' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
 #' @importFrom mvtnorm pmvnorm
 #' @importFrom LogConcDEAD mlelcd
@@ -242,7 +241,7 @@ SPMix <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", min_i
       weight <- 1 - new_gam
       new_f1 <- rep(0, n)
       which_z <- (new_gam <= thre_z)
-      lcd <- fmlogcondens::fmlcd(X=z[which_z,], w = weight[which_z] / sum(weight[which_z]))
+      lcd <- fmlcd(X=z[which_z,], w = weight[which_z] / sum(weight[which_z]))
       new_f1[which_z] <- exp(lcd$logMLE)
 
       ## Update
