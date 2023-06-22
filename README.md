@@ -33,16 +33,16 @@ devtools::install_github("JungiinChoi/multiLocalFDR")
 
 ### fmlogcondens version
 
-multiLocalFDR imports the modified version of fmlogcondens from my [GitHub](https://github.com/JungiinChoi/fmlogcondens).
+multiLocalFDR directly uses the modified function of fmlogcondens package from my [GitHub](https://github.com/JungiinChoi/fmlogcondens).
 
-If you already have the [original fmlogcondens](https://github.com/FabianRathke/fmlogcondens), multiLocalFDR will overwrite this package and give a warning. 
+If you already have the [original fmlogcondens](https://github.com/FabianRathke/fmlogcondens), multiLocalFDR will overwrite `fmlcd` function and give a warning. 
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("JungiinChoi/multiLocalFDR")
 
 #> Warning message:
-#> package 'multiLocalFDR' overwrites 'fmlogcondens' to modified version in https://github.com/JungiinChoi/fmlogcondens.
+#> function 'multiLocalFDR::fmlcd' overwrites 'fmlogcondens::fmlcd'.
 ```
 
 ## Usage
