@@ -24,7 +24,7 @@
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
+plotSPMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
                       xlab = "x", ylab = "y", zlab = "z", coord_legend = c(8, -5, 0.2))
 {
   z <- x$z
@@ -33,11 +33,13 @@ plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
   sig0 <- x$sig0
   f <- x$f
   f1 <- x$f1
-  localFDR <- x$localFDR
   d <- x$dim
-  alternative <- x$alternative
   
-  which_z <- (localFDR <= thre_localFDR)
+  if(!is.null(np.left)) {
+    for(j in 1:d) {
+      if(np.left[j] == "Yes") x$mu0[j] <- -x$mu0[j]
+    }
+  }
   
 
   if (d == 1){
@@ -121,17 +123,53 @@ plotSPMix <- function(x, thre_localFDR = 0.2, testing = TRUE,
            mu02 = round(mu0[2], digits = 2)))
 
     sub_3d <- if (testing) {sub_testing} else {sub_density}
-
-    # 3D scatterplot
-    colors <- c("#999999", "#E69F00")
-    colors <- colors[as.numeric(which_z)+1]
-    scatterplot<- scatterplot3d(z[,1],z[,2],f, pch = 16, color=colors,
-                                xlab = xlab, ylab = ylab, zlab = "f", main = sub_3d)
-    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
-    legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
-    legend_3d <- if (testing) {legend_testing} else {legend_density}
-    legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
-           legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
+    
+    if (!testing) {
+      # Contour Plot
+      ngrid <- 50
+      
+      x1 <- seq(from = min(z[,1]), to = max(z[,1]), length = ngrid)
+      x2 <- seq(from = min(z[,2]), to = max(z[,2]), length = ngrid)
+      
+      comp0 <- x$p0 * dmvnorm(as.matrix(expand.grid(x1, x2)), x$mu0, x$sig0)
+      comp1 <- (1 - x$p0) * dlcd(as.matrix(expand.grid(x1, x2)), x$lcd, uselog = FALSE)
+      comp0 <- matrix(comp0, ngrid, ngrid)
+      comp1 <- matrix(comp1, ngrid, ngrid)
+      den <- comp0 + comp1
+      
+      layout(matrix(1))
+      
+      image(x1, x2, den, cex.axis = 0.7, xlab = xlab, ylab = ylab, 
+            main = sub_3d, col = hcl.colors(50))
+      points(x$z, pch = 20, col = "gray")
+      contour(x1, x2, comp0, add = TRUE, col = "white")
+      contour(x1, x2, comp1, add = TRUE, col = "white")
+    } else{
+      z <- x$z
+      x$local.fdr <- x$posterior[,1]
+      discovered <- (x$local.fdr <= thre_localFDR)  + 1
+      library(scales)
+      
+      ngrid <- 50
+      x1 <- seq(from = min(z[,1]), to = max(z[,1]), length = ngrid) 
+      x2 <- seq(from = min(z[,2]), to = max(z[,2]), length = ngrid)
+      par(mfrow = c(1, 2))
+      comp0 <- x$p0*dmvnorm(as.matrix(expand.grid(x1, x2)), x$mu0, x$sig0)
+      comp0 <- matrix(comp0, ngrid, ngrid)
+      comp1 <- (1 - x$p0)*dlcd(as.matrix(expand.grid(x1, x2)), x$lcd, uselog = FALSE)
+      comp1 <- matrix(comp1, ngrid, ngrid)
+      den <- comp0 + comp1
+      image(x1, x2, den, cex.axis = 0.7, 
+            xlab = "", ylab = "", col = hcl.colors(50))
+      cols <- c("#999999", "#E69F00")[discovered]
+      points(z, pch = 20, col = alpha(cols, 0.4))
+      contour(x1, x2, comp0, add = TRUE)
+      contour(x1, x2, comp1, add = TRUE)
+      
+      plot(x$local.fdr, xlab = "index", ylab = "local fdr", 
+           pch = 20, col = cols)
+      abline(h = thre_localFDR, col = 2, lty = 2)
+    }
   
   } else if (d == 3) {
     colors <- c("#999999", "#E69F00")
