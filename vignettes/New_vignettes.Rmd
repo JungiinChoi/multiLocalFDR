@@ -1,0 +1,500 @@
+---
+title: "Untitled"
+author: "Jungin Choi"
+date: "2024-02-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE, message = FALSE, warning=FALSE}
+library(LogConcDEAD)
+
+SPMix <- function(z, init_p0 = 0.5, tol = 5.0e-5, np.left = NULL,
+                  alternative = "greater", min_iter = 3, max_iter = 50, 
+                  thre_z = 0.5, Uthre_gam = 0.99, Lthre_gam = 0.01 )
+{
+  # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
+  
+  NormMix <- function(z, p0, tol = 5e-3, max_iter = 5)
+  {
+    require(mvtnorm)
+    
+    k <- 0; converged <- 0
+    z <- as.matrix(z)
+    n <- nrow(z)
+    d <- ncol(z)
+    q <- qnorm(p0)
+    z.scaled <- scale(z)
+    ind0 <- ind1 <- rep(1, n)
+    for (j in 1:d) {
+      ind0 <- ind0*(z.scaled[,j] <= q)
+      ind1 <- ind1*(z.scaled[,j] > -q)
+    }
+    
+    z0 <- as.matrix(z[ind0 == 1,])
+    z1 <- as.matrix(z[ind1 == 1,])
+    
+    mu0 <- colMeans(z0)
+    sig0 <- cov(z0)
+    f0 <- dmvnorm(z, mu0, sig0)
+    
+    mu1 <- colMeans(z1)
+    sig1 <- cov(z1)
+    f1 <- dmvnorm(z, mu1, sig1)
+    
+    f <- p0*f0 + (1 - p0)*f1
+    ell <- mean(log(f))
+    
+    while ((k < 3) | ((k < max_iter) & (!converged))) {
+      k <- k + 1
+      
+      ## E-step
+      gam <- p0 * f0 / (p0 * f0 + (1 - p0) * f1)
+      
+      ## M-step
+      new_p0 <- mean(gam)
+      new_mu0 <- as.vector(t(z) %*% gam) / sum(gam)
+      dev0 <- (z - new_mu0) * sqrt(gam)
+      new_sig0 <- t(dev0) %*% dev0 / sum(gam)
+      f0 <- dmvnorm(z, new_mu0, new_sig0)
+      
+      new_mu1 <- as.vector(t(z) %*% (1 - gam)) / sum(1 - gam)
+      dev1 <- (z - new_mu1) * sqrt(1 - gam)
+      new_sig1 <- t(dev1) %*% dev1 / sum(1 - gam)
+      f1 <- dmvnorm(z, new_mu1, new_sig1)
+      
+      f <- p0*f0 + (1 - p0)*f1
+      new_ell <- mean(log(f))
+      
+      ## Update
+      diff <- abs(new_ell - ell)
+      converged <- (diff <= tol)
+      p0 <- new_p0
+      mu0 <- new_mu0
+      sig0 <- new_sig0
+      mu1 <- new_mu1
+      sig1 <- new_sig1
+      ell <- new_ell
+    }
+    
+    return(list(p0 = p0, mu0 = mu0, sig0 = sig0, mu1 = mu1, sig1 = sig1))
+  }
+  
+  NE <- function(x, X)
+  {
+    n <- nrow(X)
+    p <- ncol(X)
+    xx <- matrix(x, nrow = n, ncol = p, byrow = TRUE)
+    ne.ind <- apply(1*(X >= xx), 1, prod)
+
+    return((1:n)[ne.ind == 1])
+  }
+
+  MonotoneFDR <- function(z, fdr)
+  {
+    n <- nrow(z)
+    MFDR <- numeric(n)
+    for (i in 1:n) {
+      MFDR[i] <- max(fdr[NE(z[i,], z)])
+    }
+
+    return(MFDR)
+  }
+  
+  mult.ecdf <- function(x)
+  {
+    x <- as.matrix(x)
+    n <- nrow(x)
+    d <- ncol(x)
+    Fn <- rep(0, n)
+    for ( i in 1:n ) {
+      tmp <- matrix(x[i,], n, d, byrow = TRUE)
+      Fn[i] <- mean(rowSums(x <= tmp) == d)
+    }
+    return(Fn)
+  }
+
+  # ******************* MAIN FUNCTION *******************************
+  
+  z <- as.matrix(z)
+  n <- nrow(z)
+  d <- ncol(z)
+  ell <- rep(NA, max_iter)
+  
+  if(!is.null(np.left)) {
+    for(j in 1:d) {
+      if(np.left[j] == "Yes") z[,j] <- -z[,j]
+    }
+  }
+  
+  ## Initial step: to fit normal mixture
+  if (d == 1) {
+    z = z[,1]
+    if (alternative == "greater" | alternative == "g") {
+      q0 <- quantile(z, probs = .9)
+      p0 <- mean(z <= q0)
+      mu0 <- mean(z[z <= q0])
+      sig0 <- sd(z[z <= q0])
+      f0 <- mclust::dmvnorm(z, mu0, sig0)
+      mu1 <- mean(z[z > q0])
+      sig1 <- sd(z[z > q0])
+      f1 <- dnorm(z, mu1, sig1)
+    } else {
+      q0 <- quantile(z, probs = .7)
+      p0 <- mean(z >= q0)
+      mu0 <- mean(z[z >= q0])
+      sig0 <- sd(z[z >= q0])
+      f0 <- mclust::dmvnorm(z, mu0, sig0)
+      mu1 <- mean(z[z < q0])
+      sig1 <- sd(z[z < q0])
+      f1 <- dnorm(z, mu1, sig1)
+    }
+  } else {
+    ## Initial step: to fit normal mixture
+    Params <- NormMix(z, p0 = init_p0)
+    p0 <- Params$p0
+    mu0 <- Params$mu0
+    sig0 <- Params$sig0
+    f0 <- dmvnorm(z, mu0, sig0)
+    f1 <- dmvnorm(z, Params$mu1, Params$sig1)
+    f <- p0*f0 + (1 - p0)*f1
+    ell[1] <- mean(log(f), na.rm = TRUE)
+  }
+  gam <- f <- rep(0, n)
+
+  if (d == 1) {
+    z <- as.numeric(z)
+    ## EM-step
+    k <- 0; converged <- 0
+    while ( (k < min_iter) | ((k < max_iter) & (!converged)) ) {
+      k <- k + 1
+
+      ## E-step
+      new_f <- (p0 * f0 + (1 - p0) * f1)
+      new_gam <- p0 * f0 / new_f
+
+      ## M-step
+
+      w_gam <- new_gam/sum(new_gam, na.rm = TRUE)
+      new_mu0 <- sum(w_gam*z, na.rm = TRUE)
+      new_sig0 <- sqrt(sum(w_gam*(z-new_mu0)^2, na.rm = TRUE))
+      new_p0 <- mean(new_gam, na.rm = TRUE)
+      new_f0 <- dnorm(z, new_mu0, new_sig0)
+      new_f1 <- rep(0, n)
+      which_z <- (new_gam <= thre_z)
+      weight <- 1 - new_gam[which_z]
+      weight <- weight/sum(weight)
+      new_f1[which_z] <- exp(LogConcDEAD::mlelcd(z[which_z], w = weight)$logMLE)
+
+      ## Update
+      which_gam <- (new_gam <= Uthre_gam) * (new_gam >= Lthre_gam)
+      diff <- max(abs(gam - new_gam)[which_gam])
+      converged <- (diff <= tol)
+      cat("   EM iteration:", k, ", Change in fdr fit = ", round(diff, 5), "\n")
+      p0 <- new_p0
+      mu0 <- new_mu0
+      sig0 <- new_sig0
+      f1 <- new_f1
+      f0 <- new_f0
+      f <- p0 * f0 + (1 - p0) * f1
+      gam <- new_gam
+
+    }
+  } else {
+    ## EM-step
+    k <- 1; converged <- 0
+    while ( (k < 5) | ((k < max_iter) & (!converged)) ) {
+      k <- k + 1
+      
+      ## E-step
+      gam <- p0 * f0 / f
+      gam <- MonotoneFDR(z, gam)
+      
+      ## M-step
+      sum_gam <- sum(gam)
+      mu0 <- as.vector(t(z) %*% gam) / sum_gam
+      dev <- t(t(z) - mu0) * sqrt(gam)
+      sig0 <- t(dev) %*% dev / sum_gam
+      p0 <- mean(gam)
+      f0 <- dmvnorm(z, mu0, sig0)
+      f1 <- rep(0, n)
+      which_z <- (gam <= thre_z)
+      weight <- 1 - gam[which_z]
+      weight <- weight/sum(weight)
+      #lcd <- fmlogcondens::fmlcd(X = z[which_z,], w = weight[which_z] / sum(weight[which_z]))
+      lcd <- LogConcDEAD::mlelcd(z[which_z,], w = weight)
+      f1[which_z] <- exp(lcd$logMLE)
+      f <- p0*f0 + (1 - p0)*f1
+      ell[k] <- mean(log(f), na.rm = TRUE)
+      
+      ## Update
+      diff <- abs(ell[k] - ell[k - 1])
+      converged <- (diff <= tol)
+      cat(".")
+      if (converged) {
+        cat("Converged!\n")
+        break
+      }
+    }
+    if(!converged) cat("Warning: Not converged!\n")
+  }
+
+  # return results
+
+    if (d == 1){
+      res <- list(z = z*raw_sd + raw_mean, p0 = p0, mu0 = mu0*raw_sd + raw_mean, 
+                  sig0 = sig0*raw_sd, f = f/raw_sd, f1 = f1/raw_sd, 
+                  localFDR = gam, iter = k, dim = d, alternative = alternative)
+    } else {
+      # return results
+      res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f1 = f1, f = f,
+                  iter = k, log.likelihood = ell, lcd = lcd, dim = d,
+                  posterior = cbind(gam, 1 - gam),
+                  converged = converged)
+    }
+  
+  return(res)
+}
+
+
+
+
+
+plotSPMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
+                      xlab = "x", ylab = "y", zlab = "z", coord_legend = c(8, -5, 0.2))
+{
+  z <- x$z
+  p0 <- x$p0
+  mu0 <- x$mu0
+  sig0 <- x$sig0
+  f <- x$f
+  f1 <- x$f1
+  d <- x$dim
+  
+  if(!is.null(np.left)) {
+    for(j in 1:d) {
+      if(np.left[j] == "Yes") x$mu0[j] <- -x$mu0[j]
+    }
+  }
+  
+
+  if (d == 1){
+    z = as.numeric(z)
+    if (alternative == "greater" | alternative == "g"){
+      thre <- min(z[which_z])
+    } else{
+      thre <- max(z[which_z])
+    }
+
+    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+    legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
+
+    sub_testing=substitute(
+      paste("Hypothesis Testing: ", p[0], " = ", p0, ", ",
+            mu[0], " = ", mu0, ", ",
+            sigma[0], " = ", sigma0, ", ",
+            "threshold = ", threshold,
+            sep = ""),
+      list(p0 = round(p0, 2),
+           mu0 = round(mu0, digits = 2),
+           sigma0 = round(sig0, digits = 2),
+           threshold = round(thre, digits = 2)))
+
+    sub_density=substitute(
+      paste("Density Estimation: ", p[0], " = ", p0, ", ",
+            mu[0], " = ", mu0, ", ",
+            sigma[0], " = ", sigma0,
+            sep = ""),
+      list(p0 = round(p0, 2),
+           mu0 = round(mu0, digits = 2),
+           sigma0 = round(sig0, digits = 2)))
+
+    df = data.frame(z=z)
+    zs <- sort(z)
+    if (testing) {
+      ggplot(df,aes(x=z)) +
+        geom_histogram(aes(y = ..density..,),colour = 1, fill = "white", bins=100) +
+        geom_line(aes(sort(z), (f[order(z)])),color = "gray25", lwd=1.1) +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=0.7) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=0.7) +
+        geom_vline(aes(xintercept=thre), color="#E69F00",linetype="dashed") +
+        geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color="#E69F00",shape=25, fill="#E69F00") +
+        labs(x=xlab, y = "density") +
+        ggtitle(sub_testing) +
+        theme(plot.title = element_text(margin = margin(b = -10))) +
+        geom_rug(aes(z,color = legend_testing)) +
+        scale_color_manual(values = c("#999999", "#E69F00"), name="") +
+        theme_classic()
+    } else {
+      ggplot(df,aes(x=z)) +
+        geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
+        geom_line(aes(sort(z), (f[order(z)])),color = "gray25", lwd=1.1) +
+        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=0.7) +
+        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=0.7) +
+        labs(x=xlab, y = "density") +
+        ggtitle(sub_density) +
+        theme(plot.title = element_text(margin = margin(b = -10))) +
+        geom_rug(aes(z,color = legend_density)) +
+        scale_color_manual(values = c("#0072B2", "#D55E00"), name="") +
+        theme_classic()
+    }
+
+  } else if (d == 2) {
+    sub_testing=substitute(
+      paste("Hypothesis Testing: ", p[0], " = ", p0, ", ",
+            mu[0], " = (", mu01,",",mu02, "), ",
+            "localFDR threshold = ", threshold,
+            sep = " "),
+      list(p0 = round(p0, 2),
+           mu01 = round(mu0[1], digits = 2),
+           mu02 = round(mu0[2], digits = 2),
+           threshold = round(thre_localFDR, digits = 2)))
+
+    sub_density=substitute(
+      paste("Density Estimation: ", p[0], " = ", p0, ", ",
+            mu[0], " = (", mu01,",",mu02, "), ",
+            sep = ""),
+      list(p0 = round(p0, 2),
+           mu01 = round(mu0[1], digits = 2),
+           mu02 = round(mu0[2], digits = 2)))
+
+    sub_3d <- if (testing) {sub_testing} else {sub_density}
+    
+    if (!testing) {
+      # Contour Plot
+      ngrid <- 50
+      
+      x1 <- seq(from = min(z[,1]), to = max(z[,1]), length = ngrid)
+      x2 <- seq(from = min(z[,2]), to = max(z[,2]), length = ngrid)
+      
+      comp0 <- x$p0 * dmvnorm(as.matrix(expand.grid(x1, x2)), x$mu0, x$sig0)
+      comp1 <- (1 - x$p0) * dlcd(as.matrix(expand.grid(x1, x2)), x$lcd, uselog = FALSE)
+      comp0 <- matrix(comp0, ngrid, ngrid)
+      comp1 <- matrix(comp1, ngrid, ngrid)
+      den <- comp0 + comp1
+      
+      layout(matrix(1))
+      
+      image(x1, x2, den, cex.axis = 0.7, xlab = xlab, ylab = ylab, 
+            main = sub_3d, col = hcl.colors(50))
+      points(x$z, pch = 20, col = "gray")
+      contour(x1, x2, comp0, add = TRUE, col = "white")
+      contour(x1, x2, comp1, add = TRUE, col = "white")
+    } else{
+      z <- x$z
+      x$local.fdr <- x$posterior[,1]
+      discovered <- (x$local.fdr <= thre_localFDR)  + 1
+      library(scales)
+      
+      ngrid <- 50
+      x1 <- seq(from = min(z[,1]), to = max(z[,1]), length = ngrid) 
+      x2 <- seq(from = min(z[,2]), to = max(z[,2]), length = ngrid)
+      par(mfrow = c(1, 2))
+      comp0 <- x$p0*dmvnorm(as.matrix(expand.grid(x1, x2)), x$mu0, x$sig0)
+      comp0 <- matrix(comp0, ngrid, ngrid)
+      comp1 <- (1 - x$p0)*dlcd(as.matrix(expand.grid(x1, x2)), x$lcd, uselog = FALSE)
+      comp1 <- matrix(comp1, ngrid, ngrid)
+      den <- comp0 + comp1
+      image(x1, x2, den, cex.axis = 0.7, 
+            xlab = "", ylab = "", col = hcl.colors(50))
+      cols <- c("#999999", "#E69F00")[discovered]
+      points(z, pch = 20, col = alpha(cols, 0.4))
+      contour(x1, x2, comp0, add = TRUE)
+      contour(x1, x2, comp1, add = TRUE)
+      
+      plot(x$local.fdr, xlab = "index", ylab = "local fdr", 
+           pch = 20, col = cols)
+      abline(h = thre_localFDR, col = 2, lty = 2)
+    }
+  
+  } else if (d == 3) {
+    colors <- c("#999999", "#E69F00")
+    colors <- colors[as.numeric(which_z)+1]
+    scatterplot<- scatterplot3d(z[,1],z[,2],z[,3], pch = 16, color=colors,
+                                xlab = xlab, ylab = ylab, zlab = zlab)
+    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+    legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
+    legend_3d <- if (testing) {legend_testing} else {legend_density}
+    legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
+           legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
+  }
+}
+
+```
+
+# Simulations
+
+In this section, we will use SPMix() to estimate mixture density and compute local-FDR for generated data. Also, plotSPMix() can visualize the fitted results for both univariate and 2-dimensional data.
+
+## required libraries
+```{r warning=FALSE, message=FALSE}
+library(copula)
+library(mvtnorm)
+library(ggplot2)
+library(scatterplot3d)
+```
+
+
+## 2-dimensional data
+
+### Normal + Gaussian Copula
+
+```{r}
+
+n <- 3000
+p0 <- 0.8
+n0 <- rbinom(1, n, p0)
+n1 <- n - n0
+sig0 <- matrix(c(1, 0.25, 0.25, 1), ncol = 2, byrow = T)
+V <- rCopula(n1, ellipCopula(family = "normal", param = 0.5, dim = 2))
+z0 <- rmvnorm(n0, sigma = sig0)
+z1 <- qnorm(V, mean = 3.5, sd = .5)
+z_NN2d <- data.frame(rbind(z0, z1))
+
+ggplot(z_NN2d, aes(x = z_NN2d[,1], y = z_NN2d[,2])) +
+  geom_point(aes(color = factor(c(rep(1,n0), rep(2,n1)), labels = c("Normal(Null)", "Gaussian Copula(Alternative)")))) +
+  scale_color_manual(values = c("#999999", "#E69F00"), name="")  +
+  labs(title = "Random Generated Mixture density data", x = "x", y = "y") +
+  theme_classic()
+```
+
+
+```{r}
+NN2d <- SPMix(z_NN2d)
+
+plotSPMix(NN2d)
+plotSPMix(NN2d, testing = TRUE)
+```
+
+__plotSPMix()__ also provides visualization of 2-dimensional data.
+You can set name for x-axis and y-axis using __xlab__, __ylab__. 
+
+### Normal + Frank Copula
+
+Let's consider nonnull distribution as Frank copula with marginal gamma distribution.
+
+```{r eval = FALSE}
+z1_gamma <- qgamma(V, shape = 12, rate = 4)
+z_NG <- data.frame(rbind(z0, z1_gamma))
+
+z1_gamma <- qgamma(V, shape = 10, rate = 4)
+z_NG2d <- data.frame(rbind(z0, z1_gamma))
+
+ggplot(z_NG, aes(x = z_NG[,1], y = z_NG[,2])) +
+  geom_point(aes(color = factor(c(rep(1,n0), rep(2,n1)), labels = c("Normal", "Gamma")))) +
+  scale_color_manual(values = c("#999999", "#E69F00"), name="")  +
+  labs(title = "Random Generated Normal/Gamma Mixture", x="x", y = "y") +
+  theme_classic()
+```
+
+```{r eval = FALSE}
+NG <- SPMix(z_NG)
+
+plotSPMix(z_NG, NG$p0, NG$mu0, NG$sig0, NG$f, NG$f1, NG$localFDR, 
+          xlab = "x", ylab = "y")
+
+plotSPMix(NG2d)
+```
