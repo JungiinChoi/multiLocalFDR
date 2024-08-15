@@ -3,15 +3,15 @@
 #' @importFrom graphics legend
 #' @import stats
 #'
-#' @title draws a histogram(univariate) or a scatterplot(2D or 3D) for fitted SPMix object.
+#' @title draws a histogram(univariate) or a scatterplot(2D or 3D) for fitted SpMix object.
 #' 
 #' @description \code{plotSPMix} draws a histogram(univariate) or a scatterplot(2D or 3D) 
-#' for fitted SPMix object which can be customized with the ggplot2 package.
-#' \code{plotSPMix()} can be used for both hypothesis testing and density estimation. 
+#' for fitted SpMix object which can be customized with the ggplot2 package.
+#' \code{plotSpMix()} can be used for both hypothesis testing and density estimation. 
 #' If testing is TRUE (default), it gives fitted density for both null and alternative distribution. 
 #'
 #'
-#' @param x object of class "SPMix"
+#' @param x object of class "SpMix"
 #' @param thre_localFDR Threshold of localFDR determining significant data points. (default: 0.2)
 #' @param testing If TRUE, it's for hypothesis testing. If FALSE, it's for density estimation (default: TRUE)
 #' @param xlab Label for x-axis on histogram or 3D scatter plot (default: "x")
@@ -24,8 +24,9 @@
 #'   \item{thre}{Threshold z-value for null and alternative distribution}
 #'
 #' @export
-plotSPMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
-                      xlab = "x", ylab = "y", zlab = "z", coord_legend = c(8, -5, 0.2))
+plotSpMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
+                      xlab = "x", ylab = "y", zlab = "z", 
+                      coord_legend = c(8, -5, 0.2))
 {
   z <- x$z
   p0 <- x$p0
@@ -34,23 +35,19 @@ plotSPMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
   f <- x$f
   f1 <- x$f1
   d <- x$dim
-  
-  if(!is.null(np.left)) {
-    for(j in 1:d) {
-      if(np.left[j] == "Yes") x$mu0[j] <- -x$mu0[j]
-    }
-  }
-  
+  localFDR <- x$localFDR
+  greater_alt <- x$greater_alt
 
   if (d == 1){
     z = as.numeric(z)
-    if (alternative == "greater" | alternative == "g"){
+    which_z <- (localFDR <= thre_localFDR)
+    if (is.null(greater_alt)){
       thre <- min(z[which_z])
     } else{
       thre <- max(z[which_z])
     }
 
-    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
+    legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Null", "Non-null"))
     legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
 
     sub_testing=substitute(
@@ -136,6 +133,18 @@ plotSPMix <- function(x, thre_localFDR = 0.2, testing = FALSE,
       comp0 <- matrix(comp0, ngrid, ngrid)
       comp1 <- matrix(comp1, ngrid, ngrid)
       den <- comp0 + comp1
+      
+      # Combine data for ggplot
+      contour_data <- data.frame(grid, den)
+      
+      # Create the plot
+      ggplot(contour_data) +
+        geom_contour(aes(x = x1, y = x2, z = den)) +
+        stat_contour(geom = "polygon", aes(fill=stat(level))) +
+        scale_fill_distiller(palette = "Spectral", direction = -1)+
+        geom_point(data = pointdf, aes(x = x, y = y), shape = 20) +
+        labs(title = "Fancier Contour Plot", x = "X-axis", y = "Y-axis") +
+        theme_minimal()
       
       layout(matrix(1))
       
