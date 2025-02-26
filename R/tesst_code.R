@@ -125,8 +125,64 @@ ggplot(z_NG, aes(x = z_NG[,1], y = z_NG[,2])) +
   labs(title = "Random Generated Normal/Gamma Mixture", x="x", y = "y") +
   theme_classic()
 
-x <- SPMix(z_NG)
+x <- SpMix(z_NG)
+p <- plot(x)
+p$contour3d()
+p$density()
+p$localFDR()
 
+
+filled.contour(x1, x2, den, plot.axes = {
+  axis(1)
+  axis(2)
+  contour(x1, x2, comp0, add = TRUE, col = "#999999")
+  contour(x1, x2, comp1, add = TRUE, col = "#E69F00")
+  points(z, pch = 20, col = scales::alpha(cols, 0.2))
+}, xlab = xlab, ylab = ylab,
+main = "Estimated Density Contour"
+)
+library(plotly)
+density <- den
+
+contours = list(
+  x = list(show = TRUE, start = 1.5, end = 2, size = 0.04, color = 'white'),
+  z = list(show = TRUE, start = 0.5, end = 0.8, size = 0.05)))
+
+fig <- plot_ly(x =x1, y = x2, z = ~density) %>% add_surface(
+  contours = list(
+    z = list(
+      show=TRUE,
+      start = 0, end = max(density), size = max(density)/20,
+      usecolormap=TRUE,
+      highlightcolor="#ff0000",
+      project=list(z=TRUE)
+    )
+  )
+) %>% layout(
+  scene = list(
+    camera=list(
+      eye = list(x=1.87, y=0.88, z=-0.64)
+    )
+  )
+)
+
+fig
+
+
+ngrid <- 50
+x1 <- seq(min(z[,1]), max(z[,1]), length = ngrid) 
+x2 <- seq(min(z[,2]), max(z[,2]), length = ngrid)
+grid_points <- expand.grid(x = x1, y = x2)
+
+grid_points$density <- x$p0 * dmvnorm(as.matrix(grid_points), x$mu0, x$sig0) +
+  (1 - x$p0) * dlcd(as.matrix(grid_points), x$lcd, uselog = FALSE)
+
+ggplot(grid_points, aes(x = x, y = y, z = density)) +
+  geom_contour_filled(aes(fill = density), bins = 20) +
+  scale_fill_viridis_c() +
+  geom_point(data = as.data.frame(z), aes(x = X1, y = X2), color = "black", alpha = 0.3) +
+  labs(title = "Estimated Mixture Density Contour", x = xlab, y = ylab) +
+  theme_minimal()
 
 
 ### Efron's Data

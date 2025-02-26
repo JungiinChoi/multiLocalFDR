@@ -289,7 +289,7 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
     } else {
       res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f1 = f1, f = f,
                   iter = k, log.likelihood = ell, lcd = lcd, dim = d,
-                  posterior = cbind(gam, 1 - gam),
+                  posterior = cbind(gam, 1 - gam), localFDR = gam,
                   converged = converged)
     }
   }
