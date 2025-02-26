@@ -5,6 +5,11 @@ library(copula)
 library(mvtnorm)
 library(ggplot2)
 library(scatterplot3d)
+library(LogConcDEAD)
+library(logcondens)
+library(mclust)
+library(graphics)
+library(stats)
 
 n0 <- rbinom(1, n, p0)
 n1 <- n - n0
@@ -23,7 +28,8 @@ ggplot(z_NN2d, aes(x = z_NN2d[,1], y = z_NN2d[,2])) +
   labs(title = "Random Generated Mixture density data", x = "x", y = "y") +
   theme_classic()
 
-x <- SPMix(z_NN2d)
+x <- SpMix(z_NN2d)
+plotSpMix(x, testing = FALSE)
 
 z <- x$z
 p0 <- x$p0
