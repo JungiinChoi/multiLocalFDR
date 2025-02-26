@@ -2,36 +2,37 @@
 #' @importFrom mclust dmvnorm
 #' @importFrom logcondens activeSetLogCon
 #'
-#' @title localFDR estimation for given data
+#' @title Local False Discovery Rate (localFDR) Estimation
 #'
-#' @description \code{localFDR} returns localFDR estimates for given multi-dimensional lists of raw data, z-values, or p-values.
-#' \code{localFDR} imports \code{SPMix} for a two-component semiparametric
-#' mixture model to estimate the localFDR.
+#' @description 
+#' `localFDR` computes local false discovery rate (localFDR) estimates for multi-dimensional input data 
+#' (raw data, z-values, or p-values). It uses the semiparametric mixture model from `SpMix()`, 
+#' which integrates Efron's empirical null principle and log-concave density estimation.
 #'
-#' @param z Matrix which column indicates z-values, probit-transformed p-values.
-#' @param tol Stopping criteria for the EM algorithm. If maximum absolute difference
-#' of current and previous gamma value is smaller than tol,
-#' i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
-#' then optimization stops. (default: 5e-6)
-#' @param p_value If TRUE, input are p-values. If FALSE, input are z-values. (default: FALSE)
-#' @param alternative a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")
-#' @param max_iter Maximum number of iterations in the EM algorithm. (default: 30)
-#' @param mono If TRUE, FDR is in ascending order of z-values. (default: TRUE)
-#' @param Uthre_gam Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.
-#' @param Lthre_gam Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.
+#' @param z A numeric matrix where each row represents a data point (z-values, p-values, or raw data).
+#' @param tol Convergence threshold for the EM algorithm. The optimization stops when 
+#' the maximum absolute difference between consecutive gamma values is below `tol`. (default: 5e-6)
+#' @param is_pvalue Logical; if `TRUE`, the input is assumed to be p-values and transformed accordingly. (default: `FALSE`)
+#' @param alternative A logical vector specifying whether the alternative distribution is greater (`TRUE`) 
+#' or less (`FALSE`) than the null distribution in each dimension. Must match the number of columns in `z`. 
+#' (default: `NULL`, assumes `greater` for all dimensions)
+#' @param max_iter Maximum number of iterations for the EM algorithm. (default: 30)
+#' @param monotone Logical; if `TRUE`, ensures localFDR values are non-decreasing along the z-values. (default: `TRUE`)
+#' @param Uthre_gam Upper threshold for gamma to determine stopping criteria in the EM algorithm. (default: 0.99)
+#' @param Lthre_gam Lower threshold for gamma to determine stopping criteria in the EM algorithm. (default: 0.01)
 #'
-#'
-#' @return Estimates of localFDR for given z-values / p-values.
-#'   \item{localFDR}{local FDR estimates for given z-values / p-values}
-#'
+#' @return A numeric vector of estimated local false discovery rates (localFDR).
+#' 
 #' @export
-#'
-
-localFDR <- function(z, tol = 5e-6, p_value = FALSE, alternative = "greater", max_iter = 30,
-                     mono = TRUE, Uthre_gam = 0.99, Lthre_gam = 0.01)
+localFDR <- function(z, tol = 5e-6, is_pvalue = FALSE, alternative = NULL, 
+                     max_iter = 30, monotone = TRUE, Uthre_gam = 0.99, Lthre_gam = 0.01) 
 {
-  SPMixParams <- SPMix(z, tol, p_value, alternative, max_iter, mono, 
-                       Uthre_gam, Lthre_gam)
-
-  return(SPMixParams$localFDR)
+  # Run the semiparametric mixture model
+  SpMixParams <- SpMix(z = z, initial_p0 = 0.5, tol = tol, 
+                       is_pvalue = is_pvalue, alternative = alternative, 
+                       min_iter = 3, max_iter = max_iter, thre_z = 0.5, 
+                       Uthre_gam = Uthre_gam, Lthre_gam = Lthre_gam, thre = 0.2)
+  
+  # Return only localFDR values
+  return(SpMixParams$localFDR)
 }
