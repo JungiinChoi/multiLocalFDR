@@ -10,7 +10,7 @@
 void recalcParamsC(double* X, double* y, int* T, int *lenT, int *dim_, double* aOptNew, double* bOptNew)
 {
     int i;
-	int dim = *dim_;
+    int dim = *dim_;
     #pragma omp parallel
     {   
         int j,k,info;
@@ -53,7 +53,8 @@ int comp(const void *a,const void *b)
     double *y = (double *) b;
 
     if (*x < *y) return -1;
-    else if (*x > *y) return 1; return 0;
+    else if (*x > *y) return 1; 
+    else return 0;
 }
 
 double factorial(unsigned int f)
@@ -151,11 +152,11 @@ double calcIntegral(double* X, double* y, int lenY, int* T, int lenT, int dim, d
             }
             /* Query and allocate the optimal workspace */
             lwork = -1;
-            F77_CALL(dgeev)( "N", "N", &n, Xtmp, &lda, wr, wi, vl, &ldvl, vr, &ldvr, &wkopt, &lwork, &info );
+            F77_CALL(dgeev)( "N", "N", &n, Xtmp, &lda, wr, wi, vl, &ldvl, vr, &ldvr, &wkopt, &lwork, &info, 1, 1 );
             lwork = (int)wkopt;
             work = (double*)malloc( lwork*sizeof(double) );
             /* Solve eigenproblem */
-            F77_CALL(dgeev)( "N", "N", &n, Xtmp, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work, &lwork, &info );
+            F77_CALL(dgeev)( "N", "N", &n, Xtmp, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work, &lwork, &info, 1, 1 );
 
             /* calculate product of (potentially) complex eigenvalues */
             for (j=1; j < dim; j++) {
@@ -189,9 +190,9 @@ void calcExactIntegralC(double *X, double *y, int *T, int *lenT, int *lenY, int 
     double *yTmp = malloc((*lenY)*sizeof(double));
     double oldDistAbs, oldDist;
     int cont;
-	double *Ad = malloc(*lenT*sizeof(double));
-	double *Gd = malloc(*lenT*sizeof(double));
-	double integral;
+    double *Ad = malloc(*lenT*sizeof(double));
+    double *Gd = malloc(*lenT*sizeof(double));
+    double integral;
 
     integral = calcIntegral(X,y,*lenY,T,*lenT,*dim,Ad,Gd);
     while (fabs(*targetIntegral - integral) > *intEps && iter < maxIter) {
@@ -222,8 +223,7 @@ void calcExactIntegralC(double *X, double *y, int *T, int *lenT, int *lenY, int 
             }
         }
     }
-	recalcParamsC(X,y,T,lenT,dim,a,b);
+    recalcParamsC(X,y,T,lenT,dim,a,b);
 
     free(yTmp); free(Gd); free(Ad);
 }
-

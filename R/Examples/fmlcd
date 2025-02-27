@@ -1,0 +1,13 @@
+# draw samples from normal distribution
+X <- matrix(rnorm(500),250,2)
+# estimate log-concave density
+r <- fmlcd(X)
+
+# load `LogConcDEAD` library for plotting capatibilities
+library(LogConcDEAD)
+r <- LogConcDEAD::getinfolcd(X, r$logMLE) # create a `LogConcDEAD` object
+# plot estimated density
+par(mfrow = c(1, 2)) #square plots
+plot(r, addp = FALSE, asp = 1, main="density")
+plot(r, uselog = TRUE, addp = FALSE, asp = 1, main="log density")
+

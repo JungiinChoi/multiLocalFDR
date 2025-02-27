@@ -64,9 +64,15 @@ paramFitGammaOne <- function(X, w, ACVH, bCVH, cvh) {
 
   # detect if all hyerplanes where intitialized to the same parameters;
   # happens for small sample sizes --> very slow convergence in the final optimization
-  idxCheck <- sample(length(bOpt), min(100, length(bOpt)))
-  if (length(bOpt) > 1 && mean(apply(aOpt[idxCheck, ], 2, var)) < 1e-4) {
-    print('#### Bad initialization due to small sample size, switch to kernel kensity based initialization ####');
+  idxCheck <- sample(length(bOpt), min(200, length(bOpt)))
+  if (d == 1) {
+    var_aOpt <- var(aOpt)
+  } else {
+    var_aOpt <- mean(apply(aOpt[idxCheck, ], 2, var))
+  }
+
+  if (length(bOpt) > 1 && var_aOpt < 1e-4) {
+    print('#### Bad initialization due to small sample sizbOpte, switch to kernel kensity based initialization ####');
     params <- paramFitKernelDensity(X, w, cvh)
   } else {
     params <- c(aOpt,bOpt)

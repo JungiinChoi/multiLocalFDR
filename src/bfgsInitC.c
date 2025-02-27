@@ -68,9 +68,9 @@ void newtonBFGSLInitC(double* X,  double* XW, double* box, double* params, int *
 		delta[i] = grid[NGrid*MGrid*i+1] - grid[NGrid*MGrid*i];
 	}
 
-	//Rprintf("Obtain grid for N = %d and M = %d\n",NGrid,MGrid);
+	//printf("Obtain grid for N = %d and M = %d\n",NGrid,MGrid);
 	makeGridC(X,&YIdx,&XToBox,&numPointsPerBox,&boxEvalPoints,ACVH,bCVH,box,&lenY,&numBoxes,dim,lenCVH,NGrid,MGrid,n);
-	//Rprintf("Obtained grid with %d points\n",lenY);
+	//printf("Obtained grid with %d points\n",lenY);
 	
 	// only the first entry in each dimension is required
 	float *gridFloat = malloc(dim*sizeof(float));
@@ -104,7 +104,7 @@ void newtonBFGSLInitC(double* X,  double* XW, double* box, double* params, int *
 	
 	copyVector(newtonStep,grad,nH*(dim+1),1);
 	// LBFGS params
-	int m = 40;
+	int m = 10;
 	double* s_k = calloc(lenP*m,sizeof(double));
 	double* y_k = calloc(lenP*m,sizeof(double));
 	double* sy = calloc(m,sizeof(double));
