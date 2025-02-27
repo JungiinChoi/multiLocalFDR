@@ -21,6 +21,7 @@ extern void calcGradFastFloatC(int* numEntries, int* elementList, int* maxElemen
 extern void calcGradFastC(int* numEntries, int* elementList, int* maxElement, int* idxEntries, double* grad, double* influence, double* TermA, double* TermB, double* X, double* XW, double* grid, unsigned short int* YIdx, double* a, double* b, double gamma, double weight, double* delta, int N, int M, int dim, int nH);
 extern void calcGradFullAVXC(double* gradA, double* gradB, double* influence, double* TermA, double* TermB, float* X, float* XW, float* grid, unsigned short int* YIdx, double* a, double* b, float gamma, float weight, float* delta, int N, int M, int dim, int nH);
 extern void calcGradFloatC(double* gradA, double* gradB, double* influence, double* TermA, double* TermB, float* X, float* XW, float* grid, unsigned short int* YIdx, double* a, double* b, float gamma, float weight, float* delta, int N, int NIter, int M, int dim, int nH);
+extern void calcKernelDens(double *X, double *sampleWeights, double *kernelDens, double *h, int *N_, int *d_);
 
 // Utility functions
 extern void unzipParams(double *params, double *a, double *b, int dim, int nH, int transpose);

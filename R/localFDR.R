@@ -1,4 +1,3 @@
-#' @importFrom fmlogcondens fmlcd
 #' @importFrom mclust dmvnorm
 #' @importFrom logcondens activeSetLogCon
 #'

@@ -1,10 +1,11 @@
+#' @useDynLib multiLocalFDR, .registration = TRUE
 #' @importFrom mclust dmvnorm
 #' @importFrom mvtnorm pmvnorm
-#' @import LogConcDEAD mlelcd
 #' @importFrom logcondens activeSetLogCon
 #' @importFrom logcondens evaluateLogConDens
 #' @importFrom graphics legend
 #' @import stats
+#' @importFrom Rcpp sourceCpp
 #' 
 #' @title Semiparametric Mixture Model for Local False Discovery Rate Estimation
 #' 
@@ -244,7 +245,7 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
       which_z <- (gam <= thre)
       weight <- 1 - gam[which_z]
       weight <- weight/sum(weight)
-      lcd <- mlelcd(z[which_z,], w = weight)
+      lcd <- fmlcd(X = z[which_z,], w = weight)
       f1[which_z] <- exp(lcd$logMLE)
       f <- p0*f0 + (1 - p0)*f1
       ell[k] <- mean(log(f), na.rm = TRUE)

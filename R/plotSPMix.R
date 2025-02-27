@@ -2,7 +2,9 @@
 #' @import scatterplot3d
 #' @importFrom graphics legend
 #' @import stats
-#' @import plotly
+#' @importFrom plotly plot_ly
+#' @importFrom plotly layout
+#' @importFrom plotly add_surface
 #' @importFrom scales alpha 
 #'
 #' @title Visualization of Fitted SpMix Model

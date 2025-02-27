@@ -5,8 +5,14 @@
 #include <string.h>
 #include <float.h>
 #include <limits.h>
-#include <immintrin.h>
 #include <stdint.h>
+
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>  // Include only for x86_64
+#elif defined(__aarch64__) || defined(__arm__)
+#include <arm_neon.h>  // Use ARM NEON instead
+#endif
+
 
 void preCondGradFloatC(int** elementList, int** elementListSize, int* numEntries, int* maxElement, int* idxEntries, float* X, float* grid, unsigned short int* YIdx, int *numPointsPerBox, float* boxEvalPoints, int numBoxes, double* a, double* b, float gamma, float weight, float* delta, int N, int M, int dim, int nH, int MBox)
 {

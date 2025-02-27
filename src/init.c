@@ -8,10 +8,10 @@
 
 /* .C calls */
 extern void calcExactIntegralC(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void calcKernelDens(void *, void *, void *, void *, void *, void *);
+extern void calcKernelDens(void *, void *, void *, void *, void *, void *);  // Add this function
 extern void newtonBFGSLC(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void newtonBFGSLInitC(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void printAVXInfo();
+extern void printAVXInfo(void);
 extern void recalcParamsC(void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CMethodDef CEntries[] = {
@@ -24,10 +24,10 @@ static const R_CMethodDef CEntries[] = {
     {NULL, NULL, 0}
 };
 
-void R_init_fmlogcondens(DllInfo *dll)
+void R_init_multiLocalFDR(DllInfo *dll)
 {   
     R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
-	R_forceSymbols(dll, TRUE);
+	  R_forceSymbols(dll, TRUE);
 }
 

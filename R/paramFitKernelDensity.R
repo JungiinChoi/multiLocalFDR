@@ -23,7 +23,7 @@ paramFitKernelDensity <- function(X, w, cvh, h = apply(X, 2, sd) * n ** (-1 / (d
   d <- dim(X)[2]
 
   # C-function that calculates the kernel density
-  r <- .C("calcKernelDens", X = t(X), sampleWeights = w, yT = matrix(0, n), h = h, n = n, d = d)
+  r <- .Call("calcKernelDens", X = t(X), sampleWeights = w, yT = matrix(0, n), h = h, n = n, d = d)
   y = log(r$yT)
 
   # find upper convex hull of X and y
