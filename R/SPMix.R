@@ -1,15 +1,16 @@
 #' @importFrom mclust dmvnorm
 #' @importFrom mvtnorm pmvnorm
-#' @import LogConcDEAD mlelcd
+#' @importFrom LogConcDEAD mlelcd
 #' @importFrom logcondens activeSetLogCon
 #' @importFrom logcondens evaluateLogConDens
 #' @importFrom graphics legend
 #' @import stats
+#' @importFrom Rcpp sourceCpp
 #' 
 #' @title Semiparametric Mixture Model for Local False Discovery Rate Estimation
 #' 
 #' @description 
-#' The `SpMix` function estimates the local false discovery rate (localFDR) and semiparametric mixture density 
+#' The `SPMix` function estimates the local false discovery rate (localFDR) and semiparametric mixture density 
 #' from multi-dimensional inputs such as z-values, p-values, or raw data. It employs a two-component 
 #' semiparametric mixture model, integrating Efron's empirical null principle and log-concave density 
 #' estimation for the alternative distribution.
@@ -41,7 +42,7 @@
 #' 
 #' @export
 #' 
-SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
+SPMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
                   alternative = NULL, min_iter = 3, max_iter = 50, 
                   thre_z = 0.5, Uthre_gam = 0.99, Lthre_gam = 0.01,
                   thre = 0.2)
@@ -140,20 +141,31 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
   }
   
   # ******************* MAIN FUNCTION *******************************
+  if (is_pvalue) {
+    if (any(z <= 0 | z >= 1, na.rm = TRUE)) {
+      warning("Some p-values are 0 or 1 and were clipped to avoid Inf/NaN in qnorm.")
+    }
+    z <- pmin(pmax(z, 1e-300), 1 - 1e-16)
+    z <- qnorm(ifelse(is.null(alternative), 1 - z, z))
+  }
   
   z <- as.matrix(z)
   n <- nrow(z)
   d <- ncol(z)
   ell <- rep(NA, max_iter)
   
-  if (is_pvalue) {
-    z <- qnorm(ifelse(is.null(alternative), 1 - z, z))
-  } else {
-    if (ncol(z) == 1) z <- scale(z)
+  if (ncol(z) == 1) {
+    raw_sd <- sd(z)
+    raw_mean <- mean(z)
+    z <- scale(z)
   }
   
   if (!is.null(alternative)) {
-    z[, !alternative] <- -z[, !alternative]
+    for (j in 1:d) {
+      if (!alternative[j]) {
+        z[, j] <- -z[, j]
+      }
+    }
   }
   
   ## Initial step: to fit normal mixture
@@ -180,7 +192,7 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
     z <- as.numeric(z)
     ## EM-step
     k <- 0; converged <- 0
-    while (k < max.iter) {
+    while (k < max_iter) {
       k <- k + 1
       
       # E-step
@@ -197,14 +209,20 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
       gam <- p0 * f0 / f
       which.z <- gam <= thre
       weight <- (1 - gam[which.z]) / sum(1 - gam[which.z], na.rm = TRUE)
-      z1 <- z[which.z] + rnorm(sum(which.z), sd = 1e-5 * sd(z[which.z]))
-      lcd <- activeSetLogCon(x = z1, w = weight)
       f1 <- numeric(n)
-      f1[which.z] <- exp(lcd$phi)[rank(z1)]
+      if (sum(which.z) >= 3) {
+        z1 <- z[which.z] + rnorm(sum(which.z), sd = 1e-5 * sd(z[which.z]))
+        lcd <- activeSetLogCon(x = z1, w = weight)
+        f1[which.z] <- exp(lcd$phi)[order(order(z1))]  # safer than rank()
+      } else {
+        warning("Too few points in alternative region for log-concave estimation.")
+        f1[which.z] <- 0
+      }
       
+
       # Update f and log-likelihood
       f <- p0 * f0 + (1 - p0) * f1
-      ell[k] <- mean(log(p0 * f0[!which.z]) + log((1 - p0) * f1[which.z]))
+      ell[k] <- mean(c(log(p0 * f0[!which.z]), log((1 - p0) * f1[which.z])))
       cat(".")
       
       # Check for convergence
@@ -261,17 +279,25 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
     if(!converged) cat("Warning: Not converged!\n")
   }
   
-  if(!is.null(alternative)) {
-    for(j in 1:d) {
-      if(!alternative[j]){
-        mu0[j] <- -mu0[j]
-        z[,j] <- -z[,j]
+  if (!is.null(alternative)) {
+    if (d == 1) {
+      if (!alternative[1]) {
+        mu0 <- -mu0
+        z <- -z
+      }
+    } else {
+      for (j in 1:d) {
+        if (!alternative[j]) {
+          mu0[j] <- -mu0[j]
+          z[, j] <- -z[, j]
+        }
       }
     }
   }
-
+  
+  
   # return results
-
+  
   if (is_pvalue) {
     res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1,  
                 log.likelihood = ell,
@@ -293,9 +319,10 @@ SpMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
                   converged = converged)
     }
   }
-  class(res) <- "SpMix"
+  class(res) <- "SPMix"
   return(res)
 }
+
 
 
 

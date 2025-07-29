@@ -2,19 +2,22 @@
 #' @import scatterplot3d
 #' @importFrom graphics legend
 #' @import stats
-#' @import plotly
+#' @importFrom plotly plot_ly
+#' @importFrom plotly layout
+#' @importFrom plotly add_surface
 #' @importFrom scales alpha 
+#' @importFrom LogConcDEAD dlcd 
 #'
-#' @title Visualization of Fitted SpMix Model
+#' @title Visualization of Fitted SPMix Model
 #'
 #' @description 
-#' `plot.SpMix` visualizes the fitted semiparametric mixture model for objects of class "SpMix". 
+#' `plotSPMix` visualizes the fitted semiparametric mixture model for objects of class "SPMix". 
 #' It provides:
 #' - A **histogram** with fitted densities for univariate data (1D)
 #' - A **scatter plot** for 2D or 3D data, customizable with the `ggplot2` package.
 #' - When `testing = TRUE` (default), it overlays null and alternative fitted densities for hypothesis testing.
 #'
-#' @param x An object of class "SpMix", obtained from `SpMix()`.
+#' @param x An object of class "SPMix", obtained from `SPMix()`.
 #' @param fdr_cutoff Threshold of local false discovery rate (localFDR) for highlighting significant data points (default: 0.2).
 #' @param testing Logical; if `TRUE`, plots for hypothesis testing with null and alternative distributions. If `FALSE`, plots density estimation (default: `TRUE`).
 #' @param xlab Label for the x-axis (default: "x").
@@ -22,16 +25,16 @@
 #' @param zlab Label for the z-axis in 3D plots (default: "z").
 #' @param coord_legend Coordinates for the legend in a 3D scatter plot when data is 2D or 3D (default: `c(8, -5, 0.2)`).
 #'
-#' @return A visualization of the fitted `SpMix` model. Additionally, it returns:
+#' @return A visualization of the fitted `SPMix` model. Additionally, it returns:
 #' 
 #'   - `thre`: The threshold z-value for distinguishing between null and alternative distributions.
 #'
 #' @export
-plot.SpMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
+plotSPMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
                       xlab = "x", ylab = "y", zlab = "z", 
                       coord_legend = c(8, -5, 0.2))
 {
-  if (!inherits(x, "SpMix")) stop("Input must be a SpMix object")
+  if (!inherits(x, "SPMix")) stop("Input must be a SPMix object")
   z <- x$z
   p0 <- x$p0
   mu0 <- x$mu0
@@ -41,73 +44,93 @@ plot.SpMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
   d <- x$dim
   localFDR <- x$localFDR
   greater_alt <- x$greater_alt
-
-  if (d == 1){
-    z = as.numeric(z)
+  
+  if (d == 1) {
+    z <- as.numeric(z)
     which_z <- (localFDR <= fdr_cutoff)
-    if (is.null(greater_alt)){
-      thre <- min(z[which_z])
-    } else{
-      thre <- max(z[which_z])
+    
+    # Compute threshold for rug/hypothesis line
+    if (any(which_z)) {
+      # Check direction of alternative
+      alt <- x$alternative
+      if (is.null(alt) || length(alt) == 0 || alt[1]) {
+        thre <- min(z[which_z])  # greater alternative
+      } else {
+        thre <- max(z[which_z])  # less alternative
+      }
+    } else {
+      thre <- NA  # no discoveries
     }
-
+    
+    # For rug color
     legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Null", "Non-null"))
     legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
-
-    sub_testing=substitute(
+    
+    # Titles
+    sub_testing <- substitute(
       paste("Hypothesis Testing: ", p[0], " = ", p0, ", ",
             mu[0], " = ", mu0, ", ",
             sigma[0], " = ", sigma0, ", ",
-            "threshold = ", threshold,
-            sep = ""),
+            "threshold = ", threshold),
       list(p0 = round(p0, 2),
-           mu0 = round(mu0, digits = 2),
-           sigma0 = round(sig0, digits = 2),
-           threshold = round(thre, digits = 2)))
-
-    sub_density=substitute(
+           mu0 = round(mu0, 2),
+           sigma0 = round(sig0, 2),
+           threshold = round(thre, 2))
+    )
+    sub_density <- substitute(
       paste("Density Estimates: ", p[0], " = ", p0, ", ",
             mu[0], " = ", mu0, ", ",
-            sigma[0], " = ", sigma0,
-            sep = ""),
+            sigma[0], " = ", sigma0),
       list(p0 = round(p0, 2),
-           mu0 = round(mu0, digits = 2),
-           sigma0 = round(sig0, digits = 2)))
-
-    df = data.frame(z=z)
-    zs <- sort(z)
+           mu0 = round(mu0, 2),
+           sigma0 = round(sig0, 2))
+    )
+    
+    # Data
+    df <- data.frame(z = z)
+    f_null = p0 * dnorm(sort(z), mean = mu0, sd = sig0)
+    f_alt  = (1 - p0) * f1[order(z)]
+    f_mix = f_null + f_alt
+    y_max = max(f_mix)
+    df_line <- data.frame(
+      z = sort(z),
+      f_null = f_null, 
+      f_alt  = f_alt,
+      f_mix  = f_mix
+    )
+    
+    # Plot
+    p <- ggplot(df, aes(x = z)) +
+      geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "white", bins = 100) +
+      geom_line(data = df_line, aes(x = z, y = f_mix), color = "gray25", lwd = 1.1) +
+      geom_line(data = df_line, aes(x = z, y = f_null), color = "#0072B2", lwd = 0.7) +
+      geom_line(data = df_line, aes(x = z, y = f_alt), color = "#D55E00", lwd = 0.7) +
+      labs(x = xlab, y = "density") +
+      theme_classic() +
+      theme(plot.title = element_text(margin = margin(b = -10)))
+    
     if (testing) {
-      ggplot(df,aes(x=z)) +
-        geom_histogram(aes(y = ..density..,),colour = 1, fill = "white", bins=100) +
-        geom_line(aes(sort(z), (f[order(z)])),color = "gray25", lwd=1.1) +
-        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=0.7) +
-        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=0.7) +
-        geom_vline(aes(xintercept=thre), color="#E69F00",linetype="dashed") +
-        geom_point(mapping = aes(x = thre, y = 0.01),size = 2,color="#E69F00",shape=25, fill="#E69F00") +
-        labs(x=xlab, y = "density") +
+      if (!is.na(thre)) {
+        p <- p +
+          geom_vline(aes(xintercept = thre), color = "#E69F00", linetype = "dashed") +
+          annotate("point", x = thre, y = y_max, size = 2, color = "#E69F00", shape = 25, fill = "#E69F00")
+      }
+      p <- p +
         ggtitle(sub_testing) +
-        theme(plot.title = element_text(margin = margin(b = -10))) +
-        geom_rug(aes(z,color = legend_testing)) +
-        scale_color_manual(values = c("#999999", "#E69F00"), name="") +
-        theme_classic()
+        geom_rug(aes(z, color = legend_testing)) +
+        scale_color_manual(values = c("#999999", "#E69F00"), name = "")
     } else {
-      ggplot(df,aes(x=z)) +
-        geom_histogram(aes(y = ..density..),colour = 1, fill = "white",bins=100) +
-        geom_line(aes(sort(z), (f[order(z)])),color = "gray25", lwd=1.1) +
-        geom_line(aes(sort(z), p0*dnorm(zs, mean = mu0, sd = sig0)),color = "#0072B2",lwd=0.7) +
-        geom_line(aes(sort(z), ((1-p0)*f1[order(z)])),color = "#D55E00",lwd=0.7) +
-        labs(x=xlab, y = "density") +
+      p <- p +
         ggtitle(sub_density) +
-        theme(plot.title = element_text(margin = margin(b = -10))) +
-        geom_rug(aes(z,color = legend_density)) +
-        scale_color_manual(values = c("#0072B2", "#D55E00"), name="") +
-        theme_classic()
+        geom_rug(aes(z, color = legend_density)) +
+        scale_color_manual(values = c("#0072B2", "#D55E00"), name = "")
     }
-
-  } else if (d == 2) {
+    
+    print(p)
+  }else if (d == 2) {
     sub_3d <- substitute(
       paste(italic(p)[0], " = ", p0, ", ",
-        italic(mu)[0], " = (", mu01, ", ", mu02, ")"
+            italic(mu)[0], " = (", mu01, ", ", mu02, ")"
       ),
       list(
         p0 = round(p0, 2),
@@ -161,7 +184,7 @@ plot.SpMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
       )
       print(p)
     }
-
+    
     if (!testing) {
       plots$density <- function(){
         filled.contour(x1, x2, den, plot.axes = {
@@ -175,7 +198,8 @@ plot.SpMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
         title(sub_3d, line = 1.5)
       }
     } else{
-      cols <- c("#999999", "#E69F00")[discovered]
+      discovered <- x$localFDR <= fdr_cutoff
+      cols <- c("#999999", "#E69F00")[as.numeric(discovered) + 1]
       plots$density <- function(){
         filled.contour(x1, x2, den, plot.axes = {
           axis(1)
@@ -197,17 +221,16 @@ plot.SpMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
       }
     }
     plots$density()
+    return(plots)
   } else if (d == 3) {
-    colors <- c("#999999", "#E69F00")
-    colors <- colors[as.numeric(which_z)+1]
-    scatterplot<- scatterplot3d(z[,1],z[,2],z[,3], pch = 16, color=colors,
-                                xlab = xlab, ylab = ylab, zlab = zlab)
+    which_z <- (localFDR <= fdr_cutoff)
+    colors <- c("#999999", "#E69F00")[as.numeric(which_z)+1]
+    scatterplot <- scatterplot3d(z[,1], z[,2], z[,3], pch = 16, color = colors,
+                                 xlab = xlab, ylab = ylab, zlab = zlab)
     legend_testing <- factor(which_z, levels = c(FALSE, TRUE), labels = c("Nonsignificant", "Significant"))
     legend_density <- factor((localFDR <= 0.5), levels = c(FALSE, TRUE), labels = c("Normal", "Nonparametric"))
     legend_3d <- if (testing) {legend_testing} else {legend_density}
     legend(scatterplot$xyz.convert(coord_legend[1], coord_legend[2], coord_legend[3]),
            legend = levels(legend_3d), col = c("#999999", "#E69F00"), pch = 16)
   }
-  return(plots)
 }
-
