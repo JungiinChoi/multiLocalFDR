@@ -6,7 +6,7 @@
 #' @importFrom plotly layout
 #' @importFrom plotly add_surface
 #' @importFrom scales alpha 
-#' @importFrom LogConcDEAD dlcd 
+#' @importFrom LogConcDEAD dlcd
 #'
 #' @title Visualization of Fitted SPMix Model
 #'
@@ -147,7 +147,7 @@ plotSPMix <- function(x, fdr_cutoff = 0.2, testing = TRUE,
     
     comp0 <- x$p0 * dmvnorm(grid_points, x$mu0, x$sig0)
     comp0 <- matrix(comp0, ngrid, ngrid)
-    comp1 <- (1 - x$p0) * dlcd(grid_points, x$lcd, uselog = FALSE)
+    comp1 <- (1 - x$p0) * LogConcDEAD::dlcd(grid_points, x$lcd, uselog = FALSE)
     comp1 <- matrix(comp1, ngrid, ngrid)
     density <- den <- comp0 + comp1
     filled_contour_colormap <- hcl.colors(20, "YlOrRd", rev = TRUE)
