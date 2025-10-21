@@ -2,45 +2,44 @@
 % Please edit documentation in R/localFDR.R
 \name{localFDR}
 \alias{localFDR}
-\title{localFDR estimation for given data}
+\title{Local False Discovery Rate (localFDR) Estimation}
 \usage{
 localFDR(
   z,
   tol = 5e-06,
-  p_value = FALSE,
-  alternative = "greater",
+  is_pvalue = FALSE,
+  alternative = NULL,
   max_iter = 30,
-  mono = TRUE,
+  min_iter = 3,
   Uthre_gam = 0.99,
-  Lthre_gam = 0.01
+  Lthre_gam = 0.01,
+  thre = 0.2
 )
 }
 \arguments{
-\item{z}{Matrix which column indicates z-values, probit-transformed p-values.}
+\item{z}{A numeric matrix or vector. Each row represents a data point (e.g., z-values or raw data).}
 
-\item{tol}{Stopping criteria for the EM algorithm. If maximum absolute difference
-of current and previous gamma value is smaller than tol,
-i.e. \eqn{max_i |\gamma_i^{(k+1)}-\gamma_i^{(k)} <tol}, for k-th step,
-then optimization stops. (default: 5e-6)}
+\item{tol}{Convergence threshold for the EM algorithm (default: 5e-6).}
 
-\item{p_value}{If TRUE, input are p-values. If FALSE, input are z-values. (default: FALSE)}
+\item{is_pvalue}{Logical; if `TRUE`, the input is treated as p-values and transformed (default: FALSE).}
 
-\item{alternative}{a character string specifying the alternative hypothesis, must be one of "two.sided", "greater" (default) or "less". You can specify just the initial letter. (default: "greater")}
+\item{alternative}{Logical; if `TRUE`, assumes alternative distribution is greater than null (right-tailed); 
+if `FALSE`, left-tailed; if `NULL`, determined automatically (default: NULL).}
 
-\item{max_iter}{Maximum number of iterations in the EM algorithm. (default: 30)}
+\item{max_iter}{Maximum number of iterations for the EM algorithm (default: 30).}
 
-\item{mono}{If TRUE, FDR is in ascending order of z-values. (default: TRUE)}
+\item{min_iter}{Minimum number of EM iterations before convergence is checked (default: 3).}
 
-\item{Uthre_gam}{Upper threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
+\item{Uthre_gam}{Upper threshold for gamma convergence (default: 0.99).}
 
-\item{Lthre_gam}{Lower threshold of gamma which are used to compute stopping criteria for the EM algorithm.}
+\item{Lthre_gam}{Lower threshold for gamma convergence (default: 0.01).}
+
+\item{thre}{Threshold for hypothesis rejection (used internally to determine the cutoff, default: 0.2).}
 }
 \value{
-Estimates of localFDR for given z-values / p-values.
-  \item{localFDR}{local FDR estimates for given z-values / p-values}
+A numeric vector of estimated local FDR values for each observation.
 }
 \description{
-\code{localFDR} returns localFDR estimates for given multi-dimensional lists of raw data, z-values, or p-values.
-\code{localFDR} imports \code{SPMix} for a two-component semiparametric
-mixture model to estimate the localFDR.
+`localFDR` estimates local false discovery rates using a semiparametric mixture model
+via `SPMix()`, which combines Efron's empirical null principle with log-concave density estimation.
 }

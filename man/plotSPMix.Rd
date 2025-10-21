@@ -2,11 +2,11 @@
 % Please edit documentation in R/plotSPMix.R
 \name{plotSPMix}
 \alias{plotSPMix}
-\title{draws a histogram(univariate) or a scatterplot(2D or 3D) for fitted SPMix object.}
+\title{Visualization of Fitted SPMix Model}
 \usage{
 plotSPMix(
   x,
-  thre_localFDR = 0.2,
+  fdr_cutoff = 0.2,
   testing = TRUE,
   xlab = "x",
   ylab = "y",
@@ -15,28 +15,29 @@ plotSPMix(
 )
 }
 \arguments{
-\item{x}{object of class "SPMix"}
+\item{x}{An object of class "SPMix", obtained from `SPMix()`.}
 
-\item{thre_localFDR}{Threshold of localFDR determining significant data points. (default: 0.2)}
+\item{fdr_cutoff}{Threshold of local false discovery rate (localFDR) for highlighting significant data points (default: 0.2).}
 
-\item{testing}{If TRUE, it's for hypothesis testing. If FALSE, it's for density estimation (default: TRUE)}
+\item{testing}{Logical; if `TRUE`, plots for hypothesis testing with null and alternative distributions. If `FALSE`, plots density estimation (default: `TRUE`).}
 
-\item{xlab}{Label for x-axis on histogram or 3D scatter plot (default: "x")}
+\item{xlab}{Label for the x-axis (default: "x").}
 
-\item{ylab}{Label for y-axis on 3D scatter plot (default: "y")}
+\item{ylab}{Label for the y-axis in 2D/3D plots (default: "y").}
 
-\item{zlab}{Label for z-axis on 3D scatter plot (default: "z")}
+\item{zlab}{Label for the z-axis in 3D plots (default: "z").}
 
-\item{coord_legend}{Coordinate of a legend for a 3d scatter plot when given data is 2D or 3D. (default: c(8, -5, 0.2))}
+\item{coord_legend}{Coordinates for the legend in a 3D scatter plot when data is 2D or 3D (default: `c(8, -5, 0.2)`).}
 }
 \value{
-Plot estimated semiparametric mixture density and return threshold value.
+A visualization of the fitted `SPMix` model. Additionally, it returns:
 
-  \item{thre}{Threshold z-value for null and alternative distribution}
+  - `thre`: The threshold z-value for distinguishing between null and alternative distributions.
 }
 \description{
-\code{plotSPMix} draws a histogram(univariate) or a scatterplot(2D or 3D) 
-for fitted SPMix object which can be customized with the ggplot2 package.
-\code{plotSPMix()} can be used for both hypothesis testing and density estimation. 
-If testing is TRUE (default), it gives fitted density for both null and alternative distribution.
+`plotSPMix` visualizes the fitted semiparametric mixture model for objects of class "SPMix". 
+It provides:
+- A **histogram** with fitted densities for univariate data (1D)
+- A **scatter plot** for 2D or 3D data, customizable with the `ggplot2` package.
+- When `testing = TRUE` (default), it overlays null and alternative fitted densities for hypothesis testing.
 }
