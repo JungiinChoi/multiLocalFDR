@@ -14,7 +14,7 @@ The goal of this document is to get you up and running with `multiLocalFDR` as q
 
 ```{r warning=FALSE, message=FALSE, eval=FALSE}
 library(devtools)
-install_github("JungiinChoi/multiLocalFDR")
+install_github("JungiinChoi/multiLocalFDR", ref = "LogConcDEAD")
 ```
 
 You can install multiLocalFDR from the Github directory. 
@@ -60,6 +60,293 @@ library(scatterplot3d)
 library(multiLocalFDR)
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(LogConcDEAD)
+library(logcondens)
+library(stats)
+library(graphics)
+
+SPMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
+                  alternative = NULL, min_iter = 3, max_iter = 50, 
+                  Uthre_gam = 0.99, Lthre_gam = 0.01, thre = 0.4)
+{
+  # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
+  
+  # Internal Functions
+  fit_normal_mixture_1d <- function(z, p0, tol = 5e-3, max_iter = 5) {
+    q0 <- quantile(z, probs = p0)
+    
+    # Compute initial estimates
+    mu0 <- mean(z[z <= q0])
+    sig0 <- sd(z[z <= q0])
+    mu1 <- mean(z[z > q0])
+    sig1 <- sd(z[z > q0])
+    
+    f0 <- dnorm(z, mean = mu0, sd = sig0)
+    f1 <- dnorm(z, mean = mu1, sd = sig1)
+    ell <- sum(log(p0 * f0 + (1 - p0) * f1))
+    
+    for (k in 1:max_iter) {
+      gam <- p0 * f0 / (p0 * f0 + (1 - p0) * f1)
+      
+      # M-step
+      p0 <- mean(gam)
+      mu0 <- sum(z * gam) / sum(gam)
+      sig0 <- sqrt(sum(gam * (z - mu0)^2) / sum(gam))
+      f0 <- dnorm(z, mean = mu0, sd = sig0)
+      
+      mu1 <- sum(z * (1 - gam)) / sum(1 - gam)
+      sig1 <- sqrt(sum((1 - gam) * (z - mu1)^2) / sum(1 - gam))
+      f1 <- dnorm(z, mean = mu1, sd = sig1)
+      
+      new_ell <- sum(log(p0 * f0 + (1 - p0) * f1))
+      if (k >= 3 && abs(new_ell - ell) <= tol) break
+      ell <- new_ell
+    }
+    
+    list(p0 = p0, mu0 = mu0, sigma0 = sig0, mu1 = mu1, sigma1 = sig1)
+  }
+  
+  fit_normal_mixture_nd <- function(z, p0, tol = 5e-3, max_iter = 5) {
+    require(mvtnorm)
+    
+    z <- as.matrix(z)
+    n <- nrow(z)
+    d <- ncol(z)
+    q <- qnorm(p0)
+    
+    # Identify indices for the null and alternative distributions
+    ind0 <- rowSums(scale(z) <= q) == d
+    ind1 <- rowSums(scale(z) > -q) == d
+    
+    # Compute initial estimates
+    mu0 <- colMeans(z[ind0, , drop = FALSE])
+    sig0 <- cov(z[ind0, , drop = FALSE])
+    mu1 <- colMeans(z[ind1, , drop = FALSE])
+    sig1 <- cov(z[ind1, , drop = FALSE])
+    
+    f0 <- dmvnorm(z, mu0, sig0)
+    f1 <- dmvnorm(z, mu1, sig1)
+    f <- p0 * f0 + (1 - p0) * f1
+    ell <- mean(log(f))
+    
+    for (k in 1:max_iter) {
+      gam <- p0 * f0 / f
+      
+      # M-step
+      p0 <- mean(gam)
+      mu0 <- colSums(z * gam) / sum(gam)
+      dev0 <- (z - mu0) * sqrt(gam)
+      sig0 <- t(dev0) %*% dev0 / sum(gam)
+      f0 <- dmvnorm(z, mu0, sig0)
+      
+      mu1 <- colSums(z * (1 - gam)) / sum(1 - gam)
+      dev1 <- (z - mu1) * sqrt(1 - gam)
+      sig1 <- t(dev1) %*% dev1 / sum(1 - gam)
+      f1 <- dmvnorm(z, mu1, sig1)
+      
+      f <- p0 * f0 + (1 - p0) * f1
+      new_ell <- mean(log(f))
+      
+      if (k >= 3 && abs(new_ell - ell) <= tol) break
+      ell <- new_ell
+    }
+    
+    list(p0 = p0, mu0 = mu0, sig0 = sig0, mu1 = mu1, sig1 = sig1)
+  }
+  
+  select_NE <- function(x, X) {
+    return(which(rowSums(X >= matrix(x, nrow = nrow(X), ncol = ncol(X), byrow = TRUE)) == ncol(X)))
+  }
+  
+  monotone_fdr <- function(z, fdr) {
+    apply(z, 1, function(row) max(fdr[select_NE(row, z)]))
+  }
+  
+  # ******************* MAIN FUNCTION *******************************
+  if (is_pvalue) {
+    if (any(z <= 0 | z >= 1, na.rm = TRUE)) {
+      warning("Some p-values are 0 or 1 and were clipped to avoid Inf/NaN in qnorm.")
+    }
+    z <- pmin(pmax(z, 1e-300), 1 - 1e-16)
+    z <- qnorm(ifelse(is.null(alternative), 1 - z, z))
+  }
+  
+  z <- as.matrix(z)
+  n <- nrow(z)
+  d <- ncol(z)
+  ell <- rep(NA, max_iter)
+  
+  if (ncol(z) == 1) {
+    raw_sd <- sd(z)
+    raw_mean <- mean(z)
+    z <- scale(z)
+  }
+  
+  if (!is.null(alternative)) {
+    for (j in 1:d) {
+      if (!alternative[j]) {
+        z[, j] <- -z[, j]
+      }
+    }
+  }
+  
+  ## Initial step: to fit normal mixture
+  if (d == 1) {
+    z = z[,1]
+    # Initial step: Fit normal mixture
+    nmEM <- fit_normal_mixture_1d(z, p0 = initial_p0)
+    p0 <- nmEM$p0
+    f0 <- p0 * dnorm(z, mean = nmEM$mu0, sd = nmEM$sigma0)
+    f1 <- dnorm(z, mean = nmEM$mu1, sd = nmEM$sigma1)
+    f <- p0 * f0 + (1 - p0) * f1
+  } else {
+    ## Initial step: to fit normal mixture
+    Params <- fit_normal_mixture_nd(z, p0 = initial_p0)
+    p0 <- Params$p0
+    mu0 <- Params$mu0
+    sig0 <- Params$sig0
+    f0 <- dmvnorm(z, mu0, sig0)
+    f1 <- dmvnorm(z, Params$mu1, Params$sig1)
+    f <- p0*f0 + (1 - p0)*f1
+    ell[1] <- mean(log(f), na.rm = TRUE)
+  }
+  if (d == 1) {
+    z <- as.numeric(z)
+    ## EM-step
+    k <- 0; converged <- 0
+    while (k < max_iter) {
+      k <- k + 1
+      
+      # E-step
+      gam <- p0 * f0 / f
+      
+      # M-step
+      weight <- gam / sum(gam, na.rm = TRUE)
+      mu0 <- sum(weight * z, na.rm = TRUE)
+      sig0 <- sqrt(sum(weight * (z - mu0)^2, na.rm = TRUE))
+      f0 <- p0 * dnorm(z, mean = mu0, sd = sig0)
+      p0 <- mean(gam, na.rm = TRUE)
+      
+      # Update gam
+      gam <- p0 * f0 / f
+      which.z <- gam <= thre
+      weight <- (1 - gam[which.z]) / sum(1 - gam[which.z], na.rm = TRUE)
+      f1 <- numeric(n)
+      if (sum(which.z) >= 3) {
+        z1 <- z[which.z] + rnorm(sum(which.z), sd = 1e-5 * sd(z[which.z]))
+        lcd <- activeSetLogCon(x = z1, w = weight)
+        f1[which.z] <- exp(lcd$phi)[order(order(z1))]  # safer than rank()
+      } else {
+        warning("Too few points in alternative region for log-concave estimation.")
+        f1[which.z] <- 0
+      }
+      
+
+      # Update f and log-likelihood
+      f <- p0 * f0 + (1 - p0) * f1
+      ell[k] <- mean(c(log(p0 * f0[!which.z]), log((1 - p0) * f1[which.z])))
+      cat(".")
+      
+      # Check for convergence
+      if (k >= 7) {
+        diff <- abs(ell[k] - ell[k - 1])
+        converged <- (diff < tol)
+      }
+      if (converged) {
+        cat("Converged!\n")
+        break
+      }
+    }
+    
+    if (!converged) cat("Warning: Not converged!\n")
+    # Final posterior probabilities
+    gam <- p0 * f0 / f
+    ell <- na.omit(ell)
+    
+  } else {
+    ## EM-step
+    k <- 1; converged <- 0
+    while ( (k < 5) | ((k < max_iter) & (!converged)) ) {
+      k <- k + 1
+      
+      ## E-step
+      gam <- p0 * f0 / f
+      gam <- monotone_fdr(z, gam)
+      
+      ## M-step
+      sum_gam <- sum(gam)
+      mu0 <- as.vector(t(z) %*% gam) / sum_gam
+      dev <- t(t(z) - mu0) * sqrt(gam)
+      sig0 <- t(dev) %*% dev / sum_gam
+      p0 <- mean(gam)
+      f0 <- dmvnorm(z, mu0, sig0)
+      f1 <- rep(0, n)
+      which_z <- (gam <= thre)
+      weight <- 1 - gam[which_z]
+      weight <- weight/sum(weight)
+      lcd <- mlelcd(z[which_z,], w = weight)
+      f1[which_z] <- exp(lcd$logMLE)
+      f <- p0*f0 + (1 - p0)*f1
+      ell[k] <- mean(log(f), na.rm = TRUE)
+      
+      ## Update
+      diff <- abs(ell[k] - ell[k - 1])
+      converged <- (diff <= tol)
+      cat(".")
+      if (converged) {
+        cat("Converged!\n")
+        break
+      }
+    }
+    if(!converged) cat("Warning: Not converged!\n")
+  }
+  
+  if (!is.null(alternative)) {
+    if (d == 1) {
+      if (!alternative[1]) {
+        mu0 <- -mu0
+        z <- -z
+      }
+    } else {
+      for (j in 1:d) {
+        if (!alternative[j]) {
+          mu0[j] <- -mu0[j]
+          z[, j] <- -z[, j]
+        }
+      }
+    }
+  }
+  
+  
+  # return results
+  
+  if (is_pvalue) {
+    res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f = f, f1 = f1,  
+                log.likelihood = ell,
+                localFDR = gam, posterior = cbind(gam, 1 - gam),
+                iter = k, dim = d, alternative = alternative,
+                converged = converged)
+  } else {
+    if (d == 1){
+      res <- list(z = z*raw_sd + raw_mean, p0 = p0, mu0 = mu0*raw_sd + raw_mean, 
+                  sig0 = sig0*raw_sd, f = f/raw_sd, f1 = f1/raw_sd, 
+                  log.likelihood = ell,
+                  localFDR = gam, posterior = cbind(gam, 1 - gam),
+                  iter = k, dim = d, alternative = alternative,
+                  converged = converged)
+    } else {
+      res <- list(z = z, p0 = p0, mu0 = mu0, sig0 = sig0, f1 = f1, f = f,
+                  iter = k, log.likelihood = ell, lcd = lcd, dim = d,
+                  posterior = cbind(gam, 1 - gam), localFDR = gam,
+                  converged = converged)
+    }
+  }
+  class(res) <- "SPMix"
+  return(res)
+}
+```
+
 ## Univaraite
 
 ### Normal + Normal
@@ -86,26 +373,18 @@ str(NN1d)
 __SPMix()__ returns null probability($p0$), null parameters($\mu_0, \sigma_0$), 
 estimated density and nonnull density($f, f_1$) and estimated local-FDR value.
 
-```{r eval=FALSE}
+```{r}
 # Hypothesis testing 
 plotSPMix(NN1d)
-```
-
-```{r echo=FALSE}
-knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/1dNN.png")
 ```
 
 __plotSPMix()__ can be used for both hypothesis testing and density estimation. 
 If testing is TRUE (default), it gives density estimation for both normal and nonparametric parts. Also, threshold of given data by given local-FDR threshold 
 is marked with dashed line. 
 
-```{r eval=FALSE}
+```{r}
 # Density Estimation
 plotSPMix(NN1d, testing = FALSE)
-```
-
-```{r echo=FALSE}
-knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/1dNN2.png")
 ```
 
 If testing is FALSE, it gives density estimation and classifies two parts(normal/nonparametric) by local-FDR value (local-FDR $> 0.5$?). 
@@ -116,30 +395,91 @@ What if alternative distribution is not normal?
 
 $$f = 0.8 \cdot N(0,1) + 0.2 \cdot Gamma(shape = 12, rate = 4)$$
 
-```{r eval=FALSE}
+```{r}
 z1_gamma <- rgamma(n1, shape = 12, rate = 4)
 z_NG1d <- c(z0, z1_gamma)
 
-NG1d <- SPMix(z_NG1d)
+NG1d <- SPMix(z_NG1d, thre = 0.35)
 ```
 
-```{r eval=FALSE}
+```{r}
 # Hypothesis testing 
 plotSPMix(NG1d)
 ```
-```{r echo=FALSE}
-knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/1dNC.png")
-```
 
-```{r eval=FALSE}
+```{r}
 # Density Estimation
 plotSPMix(NG1d, testing = FALSE)
 ```
+Here’s a tight R Markdown section you can drop into your vignette. It explains **`thre`** and **`tol`**, gives **four example fits (top→bottom getting better)**, and a **simple tuning recipe**.
 
 
-```{r echo=FALSE}
-knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/1dNC2.png")
+## Hyperparameter tuning
+
+`SPMix` fits a two–component semiparametric mixture via EM. Let
+\(\gamma_i^{(t)}=\Pr\{z_i\ \text{from alternative}\mid \text{current params at iter }t\}\)
+be the posterior responsibility.
+
+- **`thre`** (default 0.4) controls which points are treated as “alternative” in the **M-step** log-concave fit:
+$$
+  \mathbf{I}_{\text{alt}}^{(t)}=\{\,i:\ \gamma_i^{(t)}\ge \texttt{thre}\,\}.
+$$
+  - Smaller `thre` → include more ambiguous points → **smoother** but can **bias** the alternative density.
+  - Larger `thre` → only high-confidence points → **sharper** but can be **high-variance**/spiky.
+  - In practice for 1D z-like inputs, `thre ∈ [0.30, 0.45]` is a good starting band.
+
+- **`tol`** is the EM **stopping tolerance**; the algorithm stops when
+  \(\max_i |\gamma_i^{(t+1)}-\gamma_i^{(t)}|<\texttt{tol}\).
+  - Larger `tol` (e.g., `1e-4`) → **fewer iterations**, slightly rougher convergence.
+  - Smaller `tol` (e.g., `5e-5` or `1e-5`) → **tighter convergence**, more iterations; improvements are typically marginal beyond `~1e-5`.
+
+Below, the fits improve **from top to bottom** as we move to a more suitable `thre` and then tighten `tol`.
+
+```{r results='hide'}
+# Example data 'z_NG1d' assumed constructed earlier; SPMix returns localFDR, f, f1, etc.
+
+# 1) Too strict on alternative set → can be spiky
+NG1d <- SPMix(z_NG1d, thre = 0.40)
+plotSPMix(NG1d)
 ```
+
+```{r results='hide'}
+# 2) Too permissive → smoother but may wash out the alternative tail
+NG1d <- SPMix(z_NG1d, thre = 0.20)
+plotSPMix(NG1d)
+```
+
+```{r results='hide'}
+# 3) Balanced threshold with moderate convergence tolerance
+NG1d <- SPMix(z_NG1d, thre = 0.35, tol = 1e-4)
+plotSPMix(NG1d)
+```
+
+```{r message=FALSE}
+# 4) Same threshold, tighter convergence → typically the best of these four
+NG1d <- SPMix(z_NG1d, thre = 0.35, tol = 5e-5)
+plotSPMix(NG1d)
+```
+
+### How to adjust `thre` and `tol`
+
+1. **Fix `tol`** at `1e-4` and **sweep `thre`** over a small grid, e.g., `{0.25, 0.30, 0.35, 0.40, 0.45}`.
+   Pick the `thre` that yields:
+
+   * stable null estimates $(\hat\mu_0,\hat\sigma_0)$,
+   * a **credible** alternative density (no over-spiky bumps; tail behavior aligned with domain expectations),
+   * smooth, monotone-sensible **localFDR** curves (e.g., decreasing along an alternative-dominated tail),
+   * and (optionally) the best **held-out** log-likelihood.
+2. **Tighten `tol`** to `5e-5` (or `1e-5` if iterations allow) **at the chosen `thre`**.
+   Stop tightening once parameter changes, log-likelihood, and localFDR curves **visually stabilize** and EM iterations remain within your `max_iter`.
+3. **Sanity checks** (report in the vignette):
+
+   * EM **iterations** used vs. `max_iter` (convergence reached?).
+   * **Sensitivity**: small perturbations of `thre` (±0.05) don’t materially change localFDR in the principal region.
+   * **Downstream stability**: FDP/FDR control or discovery set doesn’t oscillate across nearby settings.
+
+**Tip.** If you see jagged alternative densities or oscillatory localFDR, raise `thre` a little (to reduce noisy points) **or** increase `tol` slightly and/or increase `min_iter` so the EM stabilizes before stopping. If the alternative looks too flat and misses a clear tail, lower `thre` a touch.
+
 
 ## 2-dimensional data
 
@@ -164,7 +504,7 @@ ggplot(z_NN2d, aes(x = z_NN2d[,1], y = z_NN2d[,2])) +
 ```
 
 
-```{r}
+```{r message=FALSE}
 NN2d <- SPMix(z_NN2d)
 plotSPMix(NN2d, coord_legend = c(4, -1, 0))
 ```
@@ -176,7 +516,7 @@ You can set name for x-axis and y-axis using __xlab__, __ylab__.
 
 Let's consider nonnull distribution as Frank copula with marginal gamma distribution.
 
-```{r}
+```{r results='hide'}
 z1_gamma <- qgamma(V, shape = 12, rate = 4)
 z_NG <- data.frame(rbind(z0, z1_gamma))
 z1_gamma <- qgamma(V, shape = 10, rate = 4)
@@ -189,7 +529,7 @@ ggplot(z_NG, aes(x = z_NG[,1], y = z_NG[,2])) +
   theme_classic()
 ```
 
-```{r}
+```{r message=FALSE, results='hide'}
 NG2d <- SPMix(z_NG)
 plotSPMix(NG2d)
 ```
@@ -239,10 +579,13 @@ plotSPMix(NG3d, fdr_cutoff = 0.1, coord_legend = c(6, -5, 2))
 
 We compared computational times for 2D and 3D implementations over $n = 100$ to $10{,}000$. Both showed **faster-than-exponential** growth, with 3D consistently slower and the gap widening as $n$ increased.
 
-At $n = 10{,}000$, 2D took \~6.5 minutes (390 s) and 3D \~13 minutes (780 s). The log–log plot highlights steep scaling for large $n$, and 95% confidence intervals reflect slightly higher variability in 3D runs.
+At $n = 10{,}000$, 2D took \~4.1 minutes (246 s) and 3D \~9 minutes (540 s). The log–log plot highlights steep scaling for large $n$, and 95% confidence intervals reflect slightly higher variability in 3D runs.
+
+All computations were performed locally on an **Apple iMac with an M3 chip (8-core CPU, 10-core GPU), 32 GB unified RAM, running macOS Sequoia 15**.
+
 
 ```{r echo=FALSE}
-knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/compute.png")
+knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/compute_new.png")
 ```
 
 # Applications
@@ -337,6 +680,26 @@ knitr::include_graphics("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/3
 Orange dots are pathways with md-fdr $< 0.01$. 
 
 
+## Two-sided testing via $\chi^2$ pivot: probit transform
+
+For two-sided tests, map $z \mapsto z_{\chi}\ge 0$ using
+$p = 1 - F_{\chi^2_1}(z^2)$, then $z_{\chi} = \Phi^{-1}(1-p) = \Phi^{-1}(F_{\chi^2_1}(z^2))$.
+This gives a **right-tail** scale compatible with your one-sided `SPMix` (alternative in the right tail).
+
+We start with Efron’s `policez` (z-statistics). A **two-sided** test has p-value
+\(p_{2s} = 2\{1-\Phi(|z|)\}\). To use our **one-sided** `SPMix` (right-tail),
+we convert two-sided evidence \(|z|\) to a **nonnegative z-like** statistic using a
+\(\chi^2_1\) pivot:
+
+\[
+Q = z^2 \sim \chi^2_1\ \text{under }H_0,\qquad
+p = 1 - F_{\chi^2_1}(Q),\qquad
+z_{\chi} = \Phi^{-1}(1 - p) = \Phi^{-1}\!\big(F_{\chi^2_1}(z^2)\big)\ \ge 0.
+\]
+
+Intuition: large \(|z|\) ↔ large \(Q\) ↔ small \(p\) ↔ large \(z_{\chi}\) (right tail).  
+We then fit `SPMix` to \(z_{\chi}\) with the alternative on the **right**.
+
 ## Police Data (Univariate z-scores)
 
 This example uses the *police* z-score dataset from Efron (2010, §6.1) to illustrate a two-sided mixture fit with `SPMix`.
@@ -345,17 +708,20 @@ This example uses the *police* z-score dataset from Efron (2010, §6.1) to illus
 load("/Users/user/Documents/GitHub/multiLocalFDR/tmp_figure/policez.RData")
 ```
 
-```{r warning=FALSE, message=FALSE}
-head(policez)
-x_policez <- SPMix(policez, alternative = FALSE)
-```
-
-* **Input (`policez`)**: a numeric vector of *z*-scores (you can pass *z* or *p* values; raw data aren’t required).
-* **`alternative = FALSE`**: fits a **two-sided** mixture (departures in either positive or negative direction are of interest).
-* The fit estimates an (empirical) null component and a non-null mixture component, as in Efron’s large-scale testing workflow.
 
 ```{r}
-plotSPMix(x_policez, testing = FALSE, xlab = "z-value")
+# Two-sided → right-tailed, nonnegative z-like transform
+z <- as.numeric(policez)
+z_chi <- qnorm(pchisq(z^2, df = 1))   # = qnorm(2*pnorm(abs(z)) - 1); nonnegative
+
+```
+
+```{r }
+z_chi <- z_chi[is.finite(z_chi)]      
+hist(z_chi)
+fit_z_chi <- SPMix(z_chi, thre = 0.15, tol = 5.0e-1,
+                  Uthre_gam = 0.9, Lthre_gam = 0.1)
+plotSPMix(fit_z_chi)
 ```
 
 
@@ -399,8 +765,13 @@ summary(hivz)
 hist(hivz, breaks=80, main="HIV z-values", xlab="z")
 
 # 4) Fit two-sided SPMix (departures in both tails)
-fit <- SPMix(hivz)
-plotSPMix(fit, xlab = "z-value")
+z_chi_hivz <- qnorm(pchisq(hivz^2, df = 1))
+
+hist(z_chi_hivz)
+
+fit_hivz <- SPMix(z = z_chi_hivz, thre = 0.14, tol = 5.0e-1,
+                  Uthre_gam = 0.9, Lthre_gam = 0.1)
+plotSPMix(fit_hivz)
 
 ```
 

@@ -24,7 +24,7 @@
 #' or less (`FALSE`) than the null distribution in each dimension. It must match the number of columns in `z`.
 #' @param min_iter Minimum number of iterations for the EM algorithm (default: 3).
 #' @param max_iter Maximum number of iterations for the EM algorithm (default: 50).
-#' @param thre_z Threshold for gamma values used in log-concave estimation during the M-step of the EM algorithm (default: 0.5).
+#' @param thre Threshold for gamma values used in log-concave estimation during the M-step of the EM algorithm (default: 0.5).
 #' @param Uthre_gam Upper threshold for gamma to determine stopping criteria in the EM algorithm (default: 0.99).
 #' @param Lthre_gam Lower threshold for gamma to determine stopping criteria in the EM algorithm (default: 0.01).
 #' 
@@ -44,8 +44,7 @@
 #' 
 SPMix <- function(z, initial_p0 = 0.5, tol = 5.0e-5, is_pvalue = FALSE,
                   alternative = NULL, min_iter = 3, max_iter = 50, 
-                  thre_z = 0.5, Uthre_gam = 0.99, Lthre_gam = 0.01,
-                  thre = 0.2)
+                  Uthre_gam = 0.99, Lthre_gam = 0.01, thre = 0.4)
 {
   # *****************DEFINITION OF INTERNAL FUNCTIONS ******************
   
